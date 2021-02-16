@@ -20,6 +20,8 @@ public static partial class ETGMod {
         public static int FramesToHandleAllObjectsIn = 16;
         public static int FramesToHandleAllSpritesIn = 16;
 
+        public static bool EnableHooks = false;
+
         public static Dictionary<Type, ComponentHook> Hooks = new Dictionary<Type, ComponentHook>() {
             { typeof(tk2dBaseSprite),       _HookTK2DSprite },
             { typeof(tk2dClippedSprite),    _HookTK2DSprite },
@@ -83,7 +85,11 @@ public static partial class ETGMod {
         }
 
         public static void HandleGameObject(GameObject go, bool recursive = true) {
-            if (go == null) return;
+            if (!go) 
+                return;
+
+            if (!ShouldRunHooks())
+                return;
 
             Component[] components = go.GetComponents<Component>();
             for (int i = 0; i < components.Length; i++) {
@@ -98,11 +104,17 @@ public static partial class ETGMod {
         }
 
         public static void HandleComponent(Component c) {
+            if (!ShouldRunHooks())
+                return;
+
             GetHooks(c.GetType())?.Invoke(c);
         }
 
         public static void HandleObject(UnityEngine.Object o) {
-            if (o == null) return;
+            if (!o) return;
+
+            if (!ShouldRunHooks())
+                return;
 
             if (o is GameObject) {
                 HandleGameObject((GameObject) o, true);
@@ -170,6 +182,17 @@ public static partial class ETGMod {
         yield return new WaitUntil(() => ETGModGUI.TestTexture != null);
 
         a();
+    }
+
+    private static bool ShouldRunHooks()
+    {
+        if (Objects.EnableHooks)
+            return true;
+
+        if (Assets.DumpSprites || Assets.DumpSpritesMetadata)
+            return true;
+
+        return false;
     }
 
 }
