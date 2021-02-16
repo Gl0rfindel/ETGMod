@@ -376,7 +376,17 @@ public static partial class ETGMod {
                         }
                     }
                 } else {
-                    Assets.AddMapping(entryName, new AssetMetadata(archive, entryName) {
+                    byte[] data = null;
+                    if (entryName.StartsWith("sprites/") && !entry.IsDirectory)
+                    {
+                        using (var ms = new MemoryStream((int)entry.UncompressedSize))
+                        {
+                            entry.Extract(ms);
+                            data = ms.ToArray();
+                        }
+                    }
+
+                    Assets.AddMapping(entryName, new AssetMetadata(archive, entryName, data) {
                         AssetType = entry.IsDirectory ? Assets.t_AssetDirectory : null
                     });
                 }
