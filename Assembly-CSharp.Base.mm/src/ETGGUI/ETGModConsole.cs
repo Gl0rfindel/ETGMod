@@ -232,6 +232,7 @@ public class ETGModConsole : ETGModMenu {
         Commands.AddGroup("conf");
 
         Commands.GetGroup("conf")
+                .AddUnit("unity_hooks", (args) => SetBool(args, ref ETGMod.Objects.EnableHooks))
                 .AddUnit("close_console_on_command", (args) => SetBool(args, ref _CloseConsoleOnCommand))
                 .AddUnit("cut_input_focus_on_command", (args) => SetBool(args, ref _CutInputFocusOnCommand))
                 .AddUnit("enable_damage_indicators", (args) => SetBool(args, ref ETGModGUI.UseDamageIndicators))
