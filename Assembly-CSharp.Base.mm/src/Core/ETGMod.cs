@@ -57,7 +57,9 @@ public static partial class ETGMod {
     /// Used for CallInEachModule to call a method in each type of mod.
     /// </summary>
     public static List<ETGModule> AllMods = new List<ETGModule>();
+    public static List<string> LoadedModPaths = new List<string>();
     private static List<Type> _ModuleTypes = new List<Type>();
+
     private static List<Dictionary<string, MethodInfo>> _ModuleMethods = new List<Dictionary<string, MethodInfo>>();
 
     public static List<ETGModule> GameMods = new List<ETGModule>();
@@ -167,37 +169,9 @@ public static partial class ETGMod {
 			writer.WriteLine("# Each line here should either be the name of a mod .zip or the path to it.");
 			writer.WriteLine("# The order in this .txt is the order in which the mods get loaded.");
 
-            foreach (var mod in AllMods)
+            foreach (var modPath in LoadedModPaths)
             {
-                string path;
-                if (!string.IsNullOrEmpty(mod.Metadata.Archive))
-                {
-                    if (Path.GetDirectoryName(mod.Metadata.Archive) == ModsDirectory)
-                    {
-                        path = Path.GetFileName(mod.Metadata.Archive);
-                    }
-                    else
-                    {
-                        path = mod.Metadata.Archive;
-                    }
-                }
-                else if (!string.IsNullOrEmpty(mod.Metadata.Directory))
-                {
-                    if (Path.GetDirectoryName(mod.Metadata.Directory) == ModsDirectory)
-                    {
-                        path = Path.GetFileName(mod.Metadata.Directory);
-                    }
-                    else
-                    {
-                        path = mod.Metadata.Directory;
-                    }
-                }
-                else
-                {
-                    continue;
-                }
-
-                writer.WriteLine(path);
+                writer.WriteLine(modPath);
             }
 		}
 	}
@@ -336,59 +310,66 @@ public static partial class ETGMod {
         }
     }
 
-    public static void InitModZIP(string archive) {
+    public static void InitModZIP(string archive)
+    {
         Debug.Log("Initializing mod ZIP " + archive);
 
-        if (!File.Exists(archive)) {
+        string origArchive = archive;
+        if (!File.Exists(archive))
+        {
             // Probably a mod in the mod directory
             archive = Path.Combine(ModsDirectory, archive);
         }
 
         // Fallback metadata in case none is found
-        ETGModuleMetadata metadata = new ETGModuleMetadata() {
+        ETGModuleMetadata metadata = new ETGModuleMetadata()
+        {
             Name = Path.GetFileNameWithoutExtension(archive),
             Version = new Version(0, 0),
             DLL = "mod.dll"
         };
         Assembly asm = null;
 
-        using (ZipFile zip = ZipFile.Read(archive)) {
+        using (ZipFile zip = ZipFile.Read(archive))
+        {
             // First read the metadata, ...
             Texture2D icon = null;
-            foreach (ZipEntry entry in zip.Entries) {
-                if (entry.FileName == "metadata.txt") {
-                    using (MemoryStream ms = new MemoryStream()) {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        metadata = ETGModuleMetadata.Parse(archive, "", ms);
-                    }
-                    continue;
-                }
-                if (entry.FileName == "icon.png") {
-                    icon = new Texture2D(2, 2);
-                    icon.name = "icon";
-                    using (MemoryStream ms = new MemoryStream()) {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        icon.LoadImage(ms.GetBuffer());
-                    }
-                    icon.filterMode = FilterMode.Point;
-                    continue;
+            var metadataFileEntry = zip["metadata.txt"];
+            if (metadataFileEntry != null)
+            {
+                using (var stream = metadataFileEntry.OpenReader())
+                {
+                    metadata = ETGModuleMetadata.Parse(archive, "", stream);
                 }
             }
-            if (icon != null) {
+
+            var iconFileEntry = zip["icon.png"];
+            if (iconFileEntry != null)
+            {
+                icon = new Texture2D(2, 2);
+                icon.name = "icon";
+                using (MemoryStream ms = new MemoryStream((int)iconFileEntry.UncompressedSize))
+                {
+                    iconFileEntry.Extract(ms);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    icon.LoadImage(ms.ToArray());
+                }
+                icon.filterMode = FilterMode.Point;
                 metadata.Icon = icon;
             }
 
             // ... then check if the mod runs on this profile ...
-            if (!metadata.Profile.RunsOn(BaseProfile)) {
-               // Debug.LogWarning("http://www.windoof.org/sites/default/files/unsupported.gif");
+            if (!metadata.Profile.RunsOn(BaseProfile))
+            {
+                // Debug.LogWarning("http://www.windoof.org/sites/default/files/unsupported.gif");
                 return;
             }
 
             // ... then check if the dependencies are loaded ...
-            foreach (ETGModuleMetadata dependency in metadata.Dependencies) {
-                if (!DependencyLoaded(dependency)) {
+            foreach (ETGModuleMetadata dependency in metadata.Dependencies)
+            {
+                if (!DependencyLoaded(dependency))
+                {
                     Debug.LogWarning("DEPENDENCY " + dependency + " OF " + metadata + " NOT LOADED!");
                     return;
                 }
@@ -398,19 +379,27 @@ public static partial class ETGMod {
             AppDomain.CurrentDomain.AssemblyResolve += metadata._GenerateModAssemblyResolver();
 
             // ... then everything else
-            foreach (ZipEntry entry in zip.Entries) {
+            foreach (ZipEntry entry in zip.Entries)
+            {
                 string entryName = entry.FileName.Replace("\\", "/");
-                if (entryName == metadata.DLL) {
-                    using (MemoryStream ms = new MemoryStream()) {
+                if (entryName == metadata.DLL)
+                {
+                    using (MemoryStream ms = new MemoryStream((int)entry.UncompressedSize))
+                    {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
-                        if (metadata.Prelinked) {
-                            asm = Assembly.Load(ms.GetBuffer());
-                        } else {
+                        if (metadata.Prelinked)
+                        {
+                            asm = Assembly.Load(ms.ToArray());
+                        }
+                        else
+                        {
                             asm = metadata.GetRelinkedAssembly(ms);
                         }
                     }
-                } else {
+                }
+                else
+                {
                     byte[] data = null;
                     if (entryName.StartsWith("sprites/") && !entry.IsDirectory)
                     {
@@ -421,32 +410,37 @@ public static partial class ETGMod {
                         }
                     }
 
-                    Assets.AddMapping(entryName, new AssetMetadata(archive, entryName, data) {
+                    Assets.AddMapping(entryName, new AssetMetadata(archive, entryName, data)
+                    {
                         AssetType = entry.IsDirectory ? Assets.t_AssetDirectory : null
                     });
                 }
             }
         }
 
-        if (asm == null) {
+        if (asm == null)
+        {
             return;
         }
 
         asm.MapAssets();
 
         Type[] types = asm.GetTypes();
-        for (int i = 0; i < types.Length; i++) {
+        for (int i = 0; i < types.Length; i++)
+        {
             Type type = types[i];
-            if (!typeof(ETGModule).IsAssignableFrom(type) || type.IsAbstract) {
+            if (!typeof(ETGModule).IsAssignableFrom(type) || type.IsAbstract)
+            {
                 continue;
             }
 
-            ETGModule module = (ETGModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule)type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
 
             module.Metadata = metadata;
 
             GameMods.Add(module);
             AllMods.Add(module);
+            LoadedModPaths.Add(origArchive);
             _ModuleTypes.Add(type);
             _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
         }
@@ -457,6 +451,7 @@ public static partial class ETGMod {
     public static void InitModDir(string dir) {
         Debug.Log("Initializing mod directory " + dir);
 
+        string origDir = dir;
         if (!Directory.Exists(dir)) {
             // Probably a mod in the mod directory
             dir = Path.Combine(ModsDirectory, dir);
@@ -517,6 +512,7 @@ public static partial class ETGMod {
 
             GameMods.Add(module);
             AllMods.Add(module);
+            LoadedModPaths.Add(origDir);
             _ModuleTypes.Add(type);
             _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
         }
