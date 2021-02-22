@@ -102,7 +102,6 @@
     <Compile Include="src\ETGGUI\ETGModGUI.cs" />
     <Compile Include="src\ETGModMainBehaviour.cs" />
     <Compile Include="src\LimitedStream.cs" />
-    <Compile Include="src\MonoModRules.cs" />
     <Compile Include="src\MonoMod\MonoModAdded.cs" />
     <Compile Include="src\MonoMod\MonoModBlacklisted.cs" />
     <Compile Include="src\MonoMod\MonoModConstructor.cs" />
