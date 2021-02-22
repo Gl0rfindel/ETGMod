@@ -13,7 +13,7 @@ using ETGGUI;
 /// </summary>
 public static partial class ETGMod {
     
-    public readonly static Version BaseVersion = new Version(0, 3, 3);
+    public readonly static Version BaseVersion = new Version(0, 4, 0);
     // The following line will be replaced by Travis.
     public readonly static int BaseTravisBuild = 0;
     /// <summary>
