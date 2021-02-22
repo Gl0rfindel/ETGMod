@@ -215,6 +215,7 @@
     <Compile Include="src\API\Gungeon\AnimLoader\AnimLoader.cs" />
     <Compile Include="src\API\Gungeon\AnimLoader\YAMLMappings.cs" />
     <Compile Include="src\Core\Gun.cs" />
+    <Compile Include="src\ZipExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libs\YamlDotNet\YamlDotNet\YamlDotNet.csproj">

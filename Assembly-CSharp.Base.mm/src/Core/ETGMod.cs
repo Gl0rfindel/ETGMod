@@ -343,17 +343,13 @@ public static partial class ETGMod {
                 }
             }
 
-            var iconFileEntry = zip["icon.png"];
-            if (iconFileEntry != null)
+            var iconEntry = zip["icon.png"];
+            if (iconEntry != null)
             {
                 icon = new Texture2D(2, 2);
                 icon.name = "icon";
-                using (MemoryStream ms = new MemoryStream((int)iconFileEntry.UncompressedSize))
-                {
-                    iconFileEntry.Extract(ms);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    icon.LoadImage(ms.ToArray());
-                }
+                var iconData = iconEntry.ExtractToArray();
+                icon.LoadImage(iconData);
                 icon.filterMode = FilterMode.Point;
                 metadata.Icon = icon;
             }
@@ -375,45 +371,60 @@ public static partial class ETGMod {
                 }
             }
 
-            // ... then add an AssemblyResolve handler for all the .zip-ped libraries
-            AppDomain.CurrentDomain.AssemblyResolve += metadata._GenerateModAssemblyResolver();
-
             // ... then everything else
+            var asmLookup = new Dictionary<string, string>();
+            ZipEntry dllEntry = null;
             foreach (ZipEntry entry in zip.Entries)
             {
-                string entryName = entry.FileName.Replace("\\", "/");
-                if (entryName == metadata.DLL)
+                if (entry.FileName == metadata.DLL)
                 {
-                    using (MemoryStream ms = new MemoryStream((int)entry.UncompressedSize))
-                    {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        if (metadata.Prelinked)
-                        {
-                            asm = Assembly.Load(ms.ToArray());
-                        }
-                        else
-                        {
-                            asm = metadata.GetRelinkedAssembly(ms);
-                        }
-                    }
+                    dllEntry = entry;
                 }
                 else
                 {
                     byte[] data = null;
-                    if (entryName.StartsWith("sprites/") && !entry.IsDirectory)
+
+                    if (!entry.IsDirectory)
                     {
-                        using (var ms = new MemoryStream((int)entry.UncompressedSize))
+                        if (entry.FileName.StartsWith("sprites/"))
                         {
-                            entry.Extract(ms);
-                            data = ms.ToArray();
+                            data = entry.ExtractToArray();
+                        }
+
+                        if (entry.FileName.EndsWith(".dll"))
+                        {
+                            string fileName = Path.GetFileName(entry.FileName);
+                            asmLookup[fileName] = entry.FileName;
                         }
                     }
 
-                    Assets.AddMapping(entryName, new AssetMetadata(archive, entryName, data)
+                    Assets.AddMapping(entry.FileName, new AssetMetadata(archive, entry.FileName, data)
                     {
                         AssetType = entry.IsDirectory ? Assets.t_AssetDirectory : null
                     });
+                }
+            }
+
+            if (dllEntry == null)
+            {
+                return;
+            }
+
+            // ... then add an AssemblyResolve handler for all the .zip-ped libraries
+            if (asmLookup.Count > 0)
+            {
+                AppDomain.CurrentDomain.AssemblyResolve += metadata.GenerateModAssemblyResolver(asmLookup);
+            }
+
+            using (var ms = dllEntry.ExtractToMemoryStream())
+            {
+                if (metadata.Prelinked)
+                {
+                    asm = Assembly.Load(ms.GetBuffer());
+                }
+                else
+                {
+                    asm = metadata.GetRelinkedAssembly(ms);
                 }
             }
         }
@@ -481,13 +492,14 @@ public static partial class ETGMod {
             }
         }
 
-        // ... then add an AssemblyResolve handler for all the .zip-ped libraries
-        AppDomain.CurrentDomain.AssemblyResolve += metadata._GenerateModAssemblyResolver();
-
         // ... then everything else
         if (!File.Exists(metadata.DLL)) {
             return;
         }
+
+        // ... then add an AssemblyResolve handler for all the .zip-ped libraries
+        AppDomain.CurrentDomain.AssemblyResolve += metadata.GenerateModAssemblyResolver(null);
+
         if (metadata.Prelinked) {
             asm = Assembly.LoadFrom(metadata.DLL);
         } else {
@@ -520,34 +532,44 @@ public static partial class ETGMod {
         Debug.Log("Mod " + metadata.Name + " initialized.");
     }
 
-    private static ResolveEventHandler _GenerateModAssemblyResolver(this ETGModuleMetadata metadata) {
-        if (!string.IsNullOrEmpty(metadata.Archive)) {
-            return delegate (object sender, ResolveEventArgs args) {
+    private static ResolveEventHandler GenerateModAssemblyResolver(this ETGModuleMetadata metadata, Dictionary<string, string> asmLookup)
+    {
+        if (!string.IsNullOrEmpty(metadata.Archive))
+        {
+            return delegate (object sender, ResolveEventArgs args)
+            {
                 string asmName = new AssemblyName(args.Name).Name + ".dll";
-                using (ZipFile zip = ZipFile.Read(metadata.Archive)) {
-                    foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName != asmName) {
-                            continue;
-                        }
-                        using (MemoryStream ms = new MemoryStream()) {
-                            entry.Extract(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            return Assembly.Load(ms.GetBuffer());
-                        }
-                    }
-                }
-                return null;
-            };
-        }
-        if (!string.IsNullOrEmpty(metadata.Directory)) {
-            return delegate (object sender, ResolveEventArgs args) {
-                string asmPath = Path.Combine(metadata.Directory, new AssemblyName(args.Name).Name + ".dll");
-                if (!File.Exists(asmPath)) {
+                if (!asmLookup.TryGetValue(asmName, out string entryFileName))
+                {
                     return null;
                 }
+
+                using (ZipFile zip = ZipFile.Read(metadata.Archive))
+                {
+                    var entry = zip[entryFileName];
+                    if (entry == null)
+                        return null;
+
+                    var asmData = entry.ExtractToArray();
+                    return Assembly.Load(asmData);
+                }
+            };
+        }
+
+        if (!string.IsNullOrEmpty(metadata.Directory))
+        {
+            return delegate (object sender, ResolveEventArgs args)
+            {
+                string asmPath = Path.Combine(metadata.Directory, new AssemblyName(args.Name).Name + ".dll");
+                if (!File.Exists(asmPath))
+                {
+                    return null;
+                }
+
                 return Assembly.LoadFrom(asmPath);
             };
         }
+
         return null;
     }
 

@@ -53,10 +53,7 @@ public class AssetMetadata
                         var entry = zip[File];
                         if (entry != null)
                         {
-                            var ms = new MemoryStream((int)entry.UncompressedSize);
-                            entry.Extract(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            stream = ms;
+                            stream = entry.ExtractToMemoryStream();
                         }
                     }
                 }
