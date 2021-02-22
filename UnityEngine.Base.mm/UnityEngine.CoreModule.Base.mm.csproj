@@ -66,7 +66,6 @@
       <Link>src\PInvokeHelper.cs</Link>
     </Compile>
     <Compile Include="src\MonoDebug.cs" />
-    <Compile Include="src\patch_ClassLibraryInitializer.cs" />
     <Compile Include="src\patch_GameObject.cs" />
   </ItemGroup>
   <ItemGroup />
