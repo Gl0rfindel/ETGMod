@@ -240,6 +240,11 @@ public class ETGModConsole : ETGModMenu {
                 .AddUnit("enable_stat_set", (args) => SetBool(args, ref StatSetEnabled))
                 .AddUnit("player", (args) => ETGMod.Player.PlayerReplacement = args.Length == 1 ? args[0] : null)
                 .AddUnit("player_coop", (args) => ETGMod.Player.CoopReplacement = args.Length == 1 ? args[0] : null);
+
+        Commands.AddGroup("mods");
+
+        Commands.GetGroup("mods")
+                .AddUnit("write", (args) => ETGMod.WriteModsFile());
     }
 
     public override void Update() {

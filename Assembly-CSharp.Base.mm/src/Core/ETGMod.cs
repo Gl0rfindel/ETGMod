@@ -88,7 +88,7 @@ public static partial class ETGMod {
         }
         _Init = true;
 
-		/*
+        /*
         LaunchArguments = PInvokeHelper.Mono.GetDelegate<d_mono_runtime_get_main_args>()();
         for (int i = 1; i < LaunchArguments.Length; i++) {
             string arg = LaunchArguments[i];
@@ -98,7 +98,7 @@ public static partial class ETGMod {
         }
         */
 
-		GameFolder = Path.Combine(Application.dataPath, "..");
+        GameFolder = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
 		Debug.Log($"ETGMOD INIT: GAMEFOLDER = {GameFolder}");
         ModsDirectory = Path.Combine(GameFolder, "Mods");
         ModsListFile = Path.Combine(ModsDirectory, "mods.txt");
@@ -120,7 +120,7 @@ public static partial class ETGMod {
 		MultiplayerManager.Create();
 
         _ScanBackends();
-        _LoadMods();
+        LoadMods();
 
         Assets.Crawl(ResourcesDirectory);
 
@@ -188,85 +188,152 @@ public static partial class ETGMod {
         Debug.Log("Backend " + module.Metadata.Name + " initialized.");
     }
 
-	private static void _CreateModsListFile()
+	public static void WriteModsFile()
 	{
 		using (StreamWriter writer = File.CreateText(ModsListFile))
 		{
 			writer.WriteLine("# Lines beginning with # are comment lines and thus ignored.");
 			writer.WriteLine("# Each line here should either be the name of a mod .zip or the path to it.");
 			writer.WriteLine("# The order in this .txt is the order in which the mods get loaded.");
-			writer.WriteLine("# Delete this file and it will be auto-filled.");
-			string[] files = Directory.GetFiles(ModsDirectory);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string file = Path.GetFileName(files[i]);
-				if (!file.EndsWithInvariant(".zip"))
-				{
-					continue;
-				}
-				writer.WriteLine(file);
-			}
-			files = Directory.GetDirectories(ModsDirectory);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string file = Path.GetFileName(files[i]);
-				if (file == "RelinkCache")
-				{
-					continue;
-				}
-				writer.WriteLine(file);
-			}
+
+            foreach (var mod in AllMods)
+            {
+                string path;
+                if (!string.IsNullOrEmpty(mod.Metadata.Archive))
+                {
+                    if (Path.GetDirectoryName(mod.Metadata.Archive) == ModsDirectory)
+                    {
+                        path = Path.GetFileName(mod.Metadata.Archive);
+                    }
+                    else
+                    {
+                        path = mod.Metadata.Archive;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(mod.Metadata.Directory))
+                {
+                    if (Path.GetDirectoryName(mod.Metadata.Directory) == ModsDirectory)
+                    {
+                        path = Path.GetFileName(mod.Metadata.Directory);
+                    }
+                    else
+                    {
+                        path = mod.Metadata.Directory;
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+
+                writer.WriteLine(path);
+            }
 		}
 	}
 
-    private static void _LoadMods() {
+    private static List<string> ReadModsDirectory()
+    {
+        var mods = new List<string>();
+        string[] files = Directory.GetFiles(ModsDirectory);
+        foreach (var path in files)
+        {
+            string fileName = Path.GetFileName(path);
+            if (fileName.EndsWithInvariant(".zip"))
+            {
+                mods.Add(path.Trim());
+            }
+        }
+
+        files = Directory.GetDirectories(ModsDirectory);
+        foreach (var path in files)
+        {
+            string dirName = Path.GetFileName(path);
+            if (dirName != "RelinkCache")
+            {
+                mods.Add(path.Trim());
+            }
+        }
+
+        return mods;
+    }
+
+    private static void LoadMods()
+    {
         Debug.Log("Loading game mods...");
 
-        if (!Directory.Exists(ModsDirectory)) {
+        if (!Directory.Exists(ModsDirectory))
+        {
             Debug.Log("Mods directory not existing, creating...");
             Directory.CreateDirectory(ModsDirectory);
         }
 
-        if (!File.Exists(ModsListFile)) {
-			Debug.Log("Mod list file not existing or invalid, creating...");
-			_CreateModsListFile();
+        List<string> mods;
+        if (!File.Exists(ModsListFile))
+        {
+            Debug.Log("Mods.txt does not exist. Reading directory.");
+            mods = ReadModsDirectory();
+        }
+        else if (!TryParseModsFile(out mods))
+        {
+            Debug.Log("Mods.txt was not valid. Reading directory.");
+            mods = ReadModsDirectory();
         }
 
-        // Pre-run all lines to check if something's invalid
-        string[] paths = File.ReadAllLines(ModsListFile);
-        for (int i = 0; i < paths.Length; i++) {
-            string path = paths[i];
-            if (string.IsNullOrEmpty(path)) {
-                continue;
+        foreach (var mod in mods)
+        {
+            try
+            {
+                InitMod(mod);
             }
-            if (path[0] == '#') {
-                continue;
-            }
-            path = path.Trim();
-            string absolutePath = Path.Combine(ModsDirectory, path);
-            if (!File.Exists(path) && !File.Exists(absolutePath) &&
-                !Directory.Exists(path) && !Directory.Exists(absolutePath)) {
-                File.Delete(ModsListFile);
-				_CreateModsListFile();
-            }
-        }
-
-        for (int i = 0; i < paths.Length; i++) {
-            string path = paths[i];
-            if (string.IsNullOrEmpty(path)) {
-                continue;
-            }
-            if (path[0] == '#') {
-                continue;
-            }
-            try {
-                InitMod(path.Trim());
-            } catch (Exception e) {
-                Debug.LogError("ETGMOD could not load mod " + path + "! Check your output log / player log.");
+            catch (Exception e)
+            {
+                Debug.LogError("ETGMOD could not load mod " + mod + "! Check your output log / player log.");
                 LogDetailed(e);
             }
         }
+    }
 
+    private static bool TryParseModsFile(out List<string> mods)
+    {
+        // Pre-run all lines to check if something's invalid
+        try
+        {
+            string[] lines = File.ReadAllLines(ModsListFile);
+            mods = new List<string>();
+            foreach (string line in lines)
+            {
+                if (string.IsNullOrEmpty(line))
+                {
+                    continue;
+                }
+
+                string trimmed = line.Trim();
+                if (trimmed[0] == '#')
+                {
+                    continue;
+                }
+
+                string path = trimmed;
+                string absolutePath = Path.Combine(ModsDirectory, path);
+                if (!File.Exists(path) && !File.Exists(absolutePath) &&
+                    !Directory.Exists(path) && !Directory.Exists(absolutePath))
+                {
+                    Debug.Log($"mods.txt: Could not find mod '{path}'");
+                    continue;
+                }
+
+                mods.Add(path);
+            }
+
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.Log($"Failed to read mods.txt: {e.Message}");
+            Debug.LogException(e);
+            mods = null;
+            return false;
+        }
     }
 
     public static void LogDetailed(Exception e, string tag = null) {
