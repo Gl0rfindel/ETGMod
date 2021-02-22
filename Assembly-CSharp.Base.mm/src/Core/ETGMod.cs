@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Ionic.Zip;
-using System.Runtime.InteropServices;
 using System.Collections;
 using SGUI;
 using ETGGUI;
-using ETGMultiplayer;
 
 /// <summary>
 /// Main ETGMod class. Most of the "Mod the Gungeon" logic flows through here.
@@ -116,7 +114,6 @@ public static partial class ETGMod {
         Assembly.GetCallingAssembly().MapAssets();
 
         ETGModGUI.Create();
-		MultiplayerManager.Create();
 
         LoadMods();
 
