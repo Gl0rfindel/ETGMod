@@ -73,7 +73,7 @@ public class TestGunController : GunBehaviour {
         }
 
         // Here we just set the quality of the gun and the "EncounterGuid", which is used by Gungeon to identify the gun.
-        gun.quality = PickupObject.ItemQuality.S;
+        gun.quality = PickupObject.ItemQuality.EXCLUDED;
         gun.encounterTrackable.EncounterGuid = "Test Gun Please Ignore"; // Update this GUID when you need to "refresh" the gun.
 
         // Finally, we add the gun to the items list. It takes care of more than just that (loot mapping, encounter DB).
