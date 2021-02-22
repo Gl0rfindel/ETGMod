@@ -192,8 +192,6 @@
     <Compile Include="src\Guns\TestGunController.cs" />
     <Compile Include="src\Guns\BalloonGunController.cs" />
     <Compile Include="src\Core\Objects.cs" />
-    <Compile Include="src\ETGGUI\Repo\ModRepo.cs" />
-    <Compile Include="src\ETGGUI\Repo\RemoteMod.cs" />
     <Compile Include="src\Patches\patch_StringTableManager.cs" />
     <Compile Include="src\Core\Databases\StringDB.cs" />
     <Compile Include="src\SGUI\Animations\SFadeAnimation.cs" />
