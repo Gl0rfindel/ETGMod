@@ -117,7 +117,6 @@ public static partial class ETGMod {
 
                 if (file.EndsWithInvariant("animation.yml")) {
                     var texture = Resources.Load<Texture2D>("sprites/test");
-                    Console.WriteLine("TEXTURE " + texture.ToString());
 
                     var tk2d_collection = new tk2dSpriteCollectionData {
                         assetName = "test",
