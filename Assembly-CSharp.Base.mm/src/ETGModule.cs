@@ -48,6 +48,7 @@ public abstract class ETGModule {
 /// <summary>
 /// API Mod / "backend" class. All backends should have a class / type extending this.
 /// </summary>
+[Obsolete("Backends are not supported", true)]
 public abstract class ETGBackend : ETGModule {
 
     /// <param name="name">

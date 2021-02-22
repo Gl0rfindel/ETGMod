@@ -63,7 +63,6 @@ public static partial class ETGMod {
     private static List<Dictionary<string, MethodInfo>> _ModuleMethods = new List<Dictionary<string, MethodInfo>>();
 
     public static List<ETGModule> GameMods = new List<ETGModule>();
-    public static List<ETGBackend> Backends = new List<ETGBackend>();
 
 	/*
     public static string[] LaunchArguments;
@@ -119,7 +118,6 @@ public static partial class ETGMod {
         ETGModGUI.Create();
 		MultiplayerManager.Create();
 
-        _ScanBackends();
         LoadMods();
 
         Assets.Crawl(ResourcesDirectory);
@@ -162,30 +160,6 @@ public static partial class ETGMod {
     private static void _InitializeAPIs() {
         Debug.Log("Initializing APIs");
         Gungeon.Game.Initialize();
-    }
-
-    private static void _ScanBackends() {
-        Debug.Log("Scanning Assembly-CSharp.dll for backends...");
-        Assembly asm = Assembly.GetAssembly(typeof(ETGMod));
-        Type[] types = asm.GetTypes();
-        for (int i = 0; i < types.Length; i++) {
-            Type type = types[i];
-            if (typeof(ETGBackend).IsAssignableFrom(type) && !type.IsAbstract) {
-                InitBackend(type);
-            }
-        }
-    }
-    public static void InitBackend(Type type) {
-        ETGBackend module = (ETGBackend) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-        Debug.Log("Initializing backend " + type.FullName);
-
-        // Metadata is pre-set in backends
-
-        Backends.Add(module);
-        AllMods.Add(module);
-        _ModuleTypes.Add(type);
-        _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
-        Debug.Log("Backend " + module.Metadata.Name + " initialized.");
     }
 
 	public static void WriteModsFile()
@@ -611,20 +585,6 @@ public static partial class ETGMod {
             return true;
         }
 
-        foreach (ETGBackend backend in Backends) {
-            ETGModuleMetadata metadata = backend.Metadata;
-            if (metadata.Name != dependencyName) {
-                continue;
-            }
-            Version version = metadata.Version;
-            if (version.Major != dependencyVersion.Major) {
-                return false;
-            }
-            if (version.Minor < dependencyVersion.Minor) {
-                return false;
-            }
-            return true;
-        }
         return false;
     }
 
