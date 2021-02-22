@@ -23,8 +23,6 @@ public class ETGModLoaderMenu : ETGModMenu {
     }
 
     public override void Start() {
-        KeepSinging();
-
         IconMod = Resources.Load<Texture2D>("etgmod/gui/icon_mod");
         IconAPI = Resources.Load<Texture2D>("etgmod/gui/icon_api");
         IconZip = Resources.Load<Texture2D>("etgmod/gui/icon_zip");
@@ -146,90 +144,4 @@ public class ETGModLoaderMenu : ETGModMenu {
         };
         return button;
     }
-
-
-    internal void KeepSinging() {
-        ETGMod.StartGlobalCoroutine(_KeepSinging());
-    }
-    private IEnumerator _KeepSinging() {
-        while (GameManager.Instance.PrimaryPlayer == null) {
-            yield return new WaitForSeconds(1f);
-        }
-
-        if (!ETGMod.KeptSinging) {
-            if (!PlatformInterfaceSteam.IsSteamBuild()) {
-                yield break;
-            }
-            // blame Spanospy
-            for (int i = 0; i < 10 && (!SteamManager.Initialized || !Steamworks.SteamAPI.IsSteamRunning()); i++) {
-                yield return new WaitForSeconds(5f);
-            }
-            if (!SteamManager.Initialized) {
-                yield break;
-            }
-            int pData;
-            int r = UnityEngine.Random.Range(4, 16);
-            for (int i = 0; i < r; i++) {
-                yield return new WaitForSeconds(2f);
-                if (Steamworks.SteamUserStats.GetStat("ITEMS_STOLEN", out pData) && SteamManager.Initialized && Steamworks.SteamAPI.IsSteamRunning()) {
-                    yield break;
-                }
-            }
-        }
-		while (GameManager.Instance.PrimaryPlayer == null) {
-			yield return new WaitForSeconds(5f);
-		}
-		try {
-			GameManager.Instance.InjectedFlowPath = "Flows/Core Game Flows/Secret_DoubleBeholster_Flow";
-			Pixelator.Instance.FadeToBlack (0.5f, false, 0f);
-			GameManager.Instance.DelayedLoadNextLevel (0.5f);
-
-			yield return new WaitForSeconds(10f);
-
-            AIActor lotj = Gungeon.Game.Enemies["gungeon:lord_of_the_jammed"];
-			for (int i = 0; i < 10; i++) {
-				IntVector2? targetCenter = new IntVector2? (GameManager.Instance.PrimaryPlayer.CenterPosition.ToIntVector2 (VectorConversions.Floor));
-	            Pathfinding.CellValidator cellValidator = delegate (IntVector2 c) {
-	                for (int j = 0; j < lotj.Clearance.x; j++) {
-	                    for (int k = 0; k < lotj.Clearance.y; k++) {
-	                        if (GameManager.Instance.Dungeon.data.isTopWall (c.x + j, c.y + k)) {
-	                            return false;
-	                        }
-	                        if (targetCenter.HasValue) {
-	                            if (IntVector2.Distance (targetCenter.Value, c.x + j, c.y + k) < 4) {
-	                                return false;
-	                            }
-	                            if (IntVector2.Distance (targetCenter.Value, c.x + j, c.y + k) > 20) {
-	                                return false;
-	                            }
-	                        }
-	                    }
-	                }
-	                return true;
-	            };
-	            IntVector2? randomAvailableCell = GameManager.Instance.PrimaryPlayer.CurrentRoom.GetRandomAvailableCell (new IntVector2? (lotj.Clearance), new Dungeonator.CellTypes? (lotj.PathableTiles), false, cellValidator);
-	            if (randomAvailableCell.HasValue) {
-	                AIActor aiActor = AIActor.Spawn (lotj, randomAvailableCell.Value, GameManager.Instance.PrimaryPlayer.CurrentRoom, true, AIActor.AwakenAnimationType.Default, true);
-	                aiActor.HandleReinforcementFallIntoRoom (0);
-					aiActor.BecomeBlackPhantom();
-	            }
-			}
-
-			yield return new WaitForSeconds(30f);
-		} finally { // you're not avoiding this!
-        	Application.OpenURL("steam://store/311690");
-            Application.OpenURL("http://store.steampowered.com/app/311690");
-            Application.OpenURL("https://www.youtube.com/watch?v=i8ju_10NkGY");
-            Debug.Log("Hey!\nWe are Number One\nHey!\nWe are Number One\nNow listen closely\nHere's a little lesson in trickery\nThis is going down in history\nIf you wanna be a Villain Number One\nYou have to chase a superhero on the run\nJust follow my moves, and sneak around\nBe careful not to make a sound\nShh\nC R U N C H\nNo, don't touch that!\nWe are Number One\nHey!\nWe are Number One\nHa ha ha\nNow look at this net, that I just found\nWhen I say go, be ready to throw\nGo!\nThrow it at him, not me!\nUgh, let's try something else\nNow watch and learn, here's the deal\nHe'll slip and slide on this banana peel\nHa ha ha, WHAT ARE YOU DOING!?\nba-ba-biddly-ba-ba-ba-ba, ba-ba-ba-ba-ba-ba-ba\nWe are Number One\nHey!\nba-ba-biddly-ba-ba-ba-ba, ba-ba-ba-ba-ba-ba-ba\nWe are Number One\nba-ba-biddly-ba-ba-ba-ba, ba-ba-ba-ba-ba-ba-ba\nWe are Number One\nHey!\nba-ba-biddly-ba-ba-ba-ba, ba-ba-ba-ba-ba-ba-ba\nWe are Number One\nHey!\nHey!");
-            for (int i = 0; i < 10; i++) {
-                Debug.Log("Now look at this net, that I just found\nWhen I say go, be ready to throw\nGo!\nThrow it at him, not me!\nUgh, let's try something else");
-            }
-
-            if (!ETGMod.SaidTheMagicWord) {
-                PInvokeHelper.Unity.GetDelegateAtRVA<YouDidntSayTheMagicWord>(0x4A4A4A)();
-            }
-		}
-    }
-    private delegate void YouDidntSayTheMagicWord();
-
 }
