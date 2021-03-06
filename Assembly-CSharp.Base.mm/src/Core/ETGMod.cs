@@ -25,10 +25,8 @@ public static partial class ETGMod {
     public readonly static Profile BaseProfile =
         #if TRAVIS
         new Profile(2, "travis");
-        #elif DEBUG
-        new Profile(1, "b2-debug");
         #else
-        new Profile(0, "b2"); // no tag
+        new Profile(0, "ggb"); // no tag
         #endif
 
     public static string BaseUIVersion {
@@ -44,6 +42,10 @@ public static partial class ETGMod {
                 v += "-";
                 v += BaseProfile.Name;
             }
+
+#if DEBUG
+            v += " [debug]";
+#endif
 
             return v;
         }
