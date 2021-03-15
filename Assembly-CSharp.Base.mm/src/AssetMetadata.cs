@@ -91,19 +91,20 @@ public class AssetMetadata
 
             using (Stream stream = Stream)
             {
-                if (stream is LimitedStream)
+                if (stream is LimitedStream ls)
                 {
-                    return ((LimitedStream)stream).GetBuffer();
+                    return ls.GetBuffer();
                 }
 
-                using (MemoryStream ms = new MemoryStream())
+                using (var ms = new MemoryStream((int)stream.Length))
                 {
-                    byte[] buffer = new byte[2048];
+                    byte[] buffer = new byte[16 * 1024];
                     int read;
                     while (0 < (read = stream.Read(buffer, 0, buffer.Length)))
                     {
                         ms.Write(buffer, 0, read);
                     }
+
                     return ms.ToArray();
                 }
             }

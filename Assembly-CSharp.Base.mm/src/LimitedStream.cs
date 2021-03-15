@@ -2,7 +2,9 @@ using System;
 using System.IO;
 
 public class LimitedStream : MemoryStream {
-    
+
+    private const int BufferSize = 16 * 1024;
+
     public Stream LimitStream;
     public long LimitOffset;
     public long LimitLength;
@@ -147,7 +149,7 @@ public class LimitedStream : MemoryStream {
         return CachedBuffer = ToArray();
     }
     
-    private readonly byte[] _ToArrayReadBuffer = new byte[2048];
+    private readonly byte[] _ToArrayReadBuffer = new byte[BufferSize];
     public override byte[] ToArray() {
         byte[] buffer;
         int read;
