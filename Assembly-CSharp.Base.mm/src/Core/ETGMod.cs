@@ -13,9 +13,6 @@ using ETGGUI;
 /// </summary>
 public static partial class ETGMod {
 
-    // A shared object a day keeps the GC away!
-    private readonly static object[] _EmptyObjectArray = new object[0];
-
     public readonly static Version BaseVersion = new Version(0, 4, 0);
     // The following line will be replaced by Travis.
     public readonly static int BaseTravisBuild = 0;
@@ -449,7 +446,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule)type.GetConstructor(Type.EmptyTypes).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule)type.GetConstructor(Type.EmptyTypes).Invoke(Array<object>.Empty);
 
             module.Metadata = metadata;
 
@@ -522,7 +519,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule) type.GetConstructor(Type.EmptyTypes).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule) type.GetConstructor(Type.EmptyTypes).Invoke(Array<object>.Empty);
 
             module.Metadata = metadata;
 
@@ -656,7 +653,7 @@ public static partial class ETGMod {
         Type[] argsTypes;
         if (args == null) 
         {
-            args = _EmptyObjectArray;
+            args = Array<object>.Empty;
             argsTypes = Type.EmptyTypes;
         }
         else

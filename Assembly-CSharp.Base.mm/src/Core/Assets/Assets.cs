@@ -497,8 +497,8 @@ public static partial class ETGMod {
                         frameData = JSONHelper.ReadJSON<AssetSpriteData>(jsonMetadata.Stream);
                     }
 
-                    frame.normals = new Vector3[0];
-                    frame.tangents = new Vector4[0];
+                    frame.normals = Array<Vector3>.Empty;
+                    frame.tangents = Array<Vector4>.Empty;
                     frame.indices = new int[] { 0, 3, 1, 2, 3, 0 };
 
                     // TODO figure out this black magic

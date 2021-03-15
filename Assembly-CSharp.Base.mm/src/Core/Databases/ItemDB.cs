@@ -87,7 +87,7 @@ public sealed class ItemDB {
             WeightedGameObject lootGameObject = new WeightedGameObject() {
                // gameObject = value.gameObject,
                 weight = 1f,
-                additionalPrerequisites = new DungeonPrerequisite[0]
+                additionalPrerequisites = Array<DungeonPrerequisite>.Empty
             };
             lootGameObject.SetGameObject(value.gameObject);
             if (value is Gun) {

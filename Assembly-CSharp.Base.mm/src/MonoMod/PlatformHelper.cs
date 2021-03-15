@@ -17,7 +17,7 @@ public
         PropertyInfo property_platform = typeof(Environment).GetProperty("Platform", BindingFlags.NonPublic | BindingFlags.Static);
         string platID;
         if (property_platform != null) {
-            platID = property_platform.GetValue(null, new object[0]).ToString();
+            platID = property_platform.GetValue(null, null).ToString();
         } else {
             //for .net, use default value
             platID = Environment.OSVersion.Platform.ToString();

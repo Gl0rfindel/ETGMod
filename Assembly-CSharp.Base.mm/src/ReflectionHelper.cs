@@ -12,9 +12,7 @@ public delegate object DynamicMethodDelegate(object target, params object[] args
 // field names from camelCase to PascalCase.
 
 public static class ReflectionHelper {
-    private static readonly Type[] _EmptyTypes = new Type[0];
     private static readonly Type[] _ManyObjects = new Type[2] {typeof(object), typeof(object[])};
-    private static readonly object[] _NoObjects = new object[0];
     private static readonly Dictionary<MethodInfo, DynamicMethodDelegate> _MethodCache = new Dictionary<MethodInfo, DynamicMethodDelegate>();
     private static readonly Dictionary<Type, DynamicMethodDelegate> _ConstructorCache = new Dictionary<Type, DynamicMethodDelegate>();
 
@@ -97,11 +95,11 @@ public static class ReflectionHelper {
         DynamicMethodDelegate dmd;
         lock (_ConstructorCache) {
             if (!_ConstructorCache.TryGetValue(type, out dmd)) {
-                dmd = CreateDelegate(type.GetConstructor(_EmptyTypes));
+                dmd = CreateDelegate(type.GetConstructor(Array<Type>.Empty));
                 _ConstructorCache.Add(type, dmd);
             }
         }
-        return dmd(null, _NoObjects);
+        return dmd(null, Array<object>.Empty);
     }
 
     public static object InvokeMethod(MethodInfo info, object targetInstance, params object[] arguments) {
@@ -109,7 +107,7 @@ public static class ReflectionHelper {
     }
 
     public static object GetValue(PropertyInfo member, object instance) {
-        return InvokeMethod(member.GetGetMethod(true), instance, _NoObjects);
+        return InvokeMethod(member.GetGetMethod(true), instance, Array<object>.Empty);
     }
 
     public static object GetValue(MemberInfo member, object instance) {

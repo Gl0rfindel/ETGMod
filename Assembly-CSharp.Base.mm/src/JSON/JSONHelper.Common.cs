@@ -15,7 +15,6 @@ public static partial class JSONHelper {
     private readonly static Type t_string = typeof(string);
     private readonly static Type t_byte_a = typeof(byte[]);
     private readonly static Type t_Type = typeof(Type);
-    private readonly static object[] a_object_0 = new object[0];
 
     private readonly static Dictionary<string, Type> _TypeCache = new Dictionary<string, Type>();
 
@@ -60,7 +59,7 @@ public static partial class JSONHelper {
                         continue;
                     }
                     if (type == bi.GetGenericArguments()[0]) {
-                        return Rules[type_] = ((JSONRule) t.GetConstructor(Type.EmptyTypes).Invoke(a_object_0)).Fill(type_);
+                        return Rules[type_] = ((JSONRule) t.GetConstructor(Type.EmptyTypes).Invoke(Array<object>.Empty)).Fill(type_);
                     }
                 }
             }
