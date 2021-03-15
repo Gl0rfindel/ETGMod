@@ -12,7 +12,10 @@ using ETGGUI;
 /// Main ETGMod class. Most of the "Mod the Gungeon" logic flows through here.
 /// </summary>
 public static partial class ETGMod {
-    
+
+    // A shared object a day keeps the GC away!
+    private readonly static object[] _EmptyObjectArray = new object[0];
+
     public readonly static Version BaseVersion = new Version(0, 4, 0);
     // The following line will be replaced by Travis.
     public readonly static int BaseTravisBuild = 0;
@@ -139,7 +142,7 @@ public static partial class ETGMod {
 
         _InitializeAPIs();
 
-        CallInEachModule("Init");
+        CallInEachModule(m => m.Init());
     }
 
     public static void Start() {
@@ -151,7 +154,8 @@ public static partial class ETGMod {
         dfInputManager manager = GameUIRoot.Instance.Manager.GetComponent<dfInputManager>();
         manager.Adapter = new SGUIDFInput(manager.Adapter);
 
-        CallInEachModule("Start");
+        CallInEachModule(m => m.Start());
+
         // Needs to happen late as mods can add their own guns.
         StartGlobalCoroutine(ETGModGUI.ListAllItemsAndGuns());
     }
@@ -445,7 +449,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule)type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule)type.GetConstructor(Type.EmptyTypes).Invoke(_EmptyObjectArray);
 
             module.Metadata = metadata;
 
@@ -518,7 +522,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule) type.GetConstructor(Type.EmptyTypes).Invoke(_EmptyObjectArray);
 
             module.Metadata = metadata;
 
@@ -574,9 +578,7 @@ public static partial class ETGMod {
     }
 
     public static void Exit() {
-        // TODO
-
-        CallInEachModule("Exit");
+        CallInEachModule(m => m.Exit());
     }
 
     /// <summary>
@@ -649,12 +651,19 @@ public static partial class ETGMod {
     /// </summary>
     /// <param name="methodName">Method name of the method to call.</param>
     /// <param name="args">Arguments to pass - null for none.</param>
-    public static void CallInEachModule(string methodName, object[] args = null) {
-        Type[] argsTypes = null;
-        if (args == null) {
+    public static void CallInEachModule(string methodName, object[] args = null) 
+    {
+        Type[] argsTypes;
+        if (args == null) 
+        {
             args = _EmptyObjectArray;
-            args = _EmptyTypeArray;
+            argsTypes = Type.EmptyTypes;
         }
+        else
+        {
+            argsTypes = Type.GetTypeArray(args);
+        }
+
         for (int i = 0; i < _ModuleTypes.Count; i++) {
             Dictionary<string, MethodInfo> moduleMethods = _ModuleMethods[i];
             MethodInfo method;
@@ -666,9 +675,6 @@ public static partial class ETGMod {
                 continue;
             }
 
-            if (argsTypes == null) {
-                argsTypes = Type.GetTypeArray(args);
-            }
             method = _ModuleTypes[i].GetMethod(methodName, argsTypes);
             moduleMethods[methodName] = method;
             if (method == null) {
@@ -699,9 +705,16 @@ public static partial class ETGMod {
         return args[0];
     }
 
-    // A shared object a day keeps the GC away!
-    private readonly static Type[] _EmptyTypeArray = new Type[0];
-    private readonly static object[] _EmptyObjectArray = new object[0];
+    private static void CallInEachModule(Action<ETGModule> moduleAction)
+    {
+        if (moduleAction == null)
+            return;
+
+        foreach (var mod in AllMods)
+        {
+            moduleAction(mod);
+        }
+    }
 
     public class Profile {
         public readonly int Id;
