@@ -45,8 +45,6 @@ public class ETGModGUI : MonoBehaviour {
 
     public static float? StoredTimeScale = null;
 
-    public static bool UseDamageIndicators = false;
-
     public static Texture2D TestTexture;
 
     public static IETGModMenu CurrentMenuInstance {
@@ -83,8 +81,6 @@ public class ETGModGUI : MonoBehaviour {
         LoaderMenu = new ETGModLoaderMenu();
         ConsoleMenu = new ETGModConsole();
         InspectorMenu = new ETGModInspector();
-
-        ETGDamageIndicatorGUI.Create();
     }
 
     public static void Start() {

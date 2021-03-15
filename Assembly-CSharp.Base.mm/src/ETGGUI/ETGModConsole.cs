@@ -235,7 +235,6 @@ public class ETGModConsole : ETGModMenu {
                 .AddUnit("unity_hooks", (args) => SetBool(args, ref ETGMod.Objects.EnableHooks))
                 .AddUnit("close_console_on_command", (args) => SetBool(args, ref _CloseConsoleOnCommand))
                 .AddUnit("cut_input_focus_on_command", (args) => SetBool(args, ref _CutInputFocusOnCommand))
-                .AddUnit("enable_damage_indicators", (args) => SetBool(args, ref ETGModGUI.UseDamageIndicators))
                 .AddUnit("match_contains", (args) => SetBool(args, ref AutocompletionSettings.MatchContains))
                 .AddUnit("enable_stat_set", (args) => SetBool(args, ref StatSetEnabled))
                 .AddUnit("player", (args) => ETGMod.Player.PlayerReplacement = args.Length == 1 ? args[0] : null)
