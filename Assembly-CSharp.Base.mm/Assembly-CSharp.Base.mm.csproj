@@ -151,7 +151,6 @@
     <Compile Include="src\JSON\Rules\JSONOverridableBoolRule.cs" />
     <Compile Include="src\JSON\Rules\JSONScriptableObjectRule.cs" />
     <Compile Include="src\JSON\Rules\JSONComponentRule.cs" />
-    <Compile Include="src\PInvokeHelper.cs" />
     <Compile Include="src\Core\Databases.cs" />
     <Compile Include="src\Core\RuntimeAtlas.cs" />
     <Compile Include="src\Core\GunBehaviour.cs" />

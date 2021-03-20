@@ -62,10 +62,6 @@
     <Compile Include="src\patch_Resources.cs" />
     <Compile Include="src\patch_TextAsset.cs" />
     <Compile Include="src\ETGModInstallerRenames.cs" />
-    <Compile Include="..\Assembly-CSharp.Base.mm\src\PInvokeHelper.cs">
-      <Link>src\PInvokeHelper.cs</Link>
-    </Compile>
-    <Compile Include="src\MonoDebug.cs" />
     <Compile Include="src\patch_GameObject.cs" />
   </ItemGroup>
   <ItemGroup />
