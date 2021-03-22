@@ -296,6 +296,7 @@ public static partial class ETGMod {
         };
         Assembly asm = null;
 
+        var assemblyMapping = new Dictionary<string, string>();
         using (ZipFile zip = ZipFile.Read(archive)) {
             // First read the metadata, ...
             Texture2D icon = null;
@@ -308,6 +309,7 @@ public static partial class ETGMod {
                     }
                     continue;
                 }
+
                 if (entry.FileName == "icon.png") {
                     icon = new Texture2D(2, 2);
                     icon.name = "icon";
@@ -318,6 +320,12 @@ public static partial class ETGMod {
                     }
                     icon.filterMode = FilterMode.Point;
                     continue;
+                }
+
+                if (entry.FileName.EndsWith(".dll"))
+                {
+                    string asmName = Path.GetFileName(entry.FileName);
+                    assemblyMapping[asmName] = entry.FileName;
                 }
             }
             if (icon != null) {
@@ -339,7 +347,8 @@ public static partial class ETGMod {
             }
 
             // ... then add an AssemblyResolve handler for all the .zip-ped libraries
-            AppDomain.CurrentDomain.AssemblyResolve += metadata._GenerateModAssemblyResolver();
+            if (assemblyMapping.Count > 0)
+                AppDomain.CurrentDomain.AssemblyResolve += metadata.GenerateModArchiveAssemblyResolver(assemblyMapping);
 
             // ... then everything else
             foreach (ZipEntry entry in zip.Entries) {
@@ -431,7 +440,7 @@ public static partial class ETGMod {
         }
 
         // ... then add an AssemblyResolve handler for all the .zip-ped libraries
-        AppDomain.CurrentDomain.AssemblyResolve += metadata._GenerateModAssemblyResolver();
+        AppDomain.CurrentDomain.AssemblyResolve += metadata.GenerateModDirectoryAssemblyResolver();
 
         // ... then everything else
         if (!File.Exists(metadata.DLL)) {
@@ -468,35 +477,45 @@ public static partial class ETGMod {
         Debug.Log("Mod " + metadata.Name + " initialized.");
     }
 
-    private static ResolveEventHandler _GenerateModAssemblyResolver(this ETGModuleMetadata metadata) {
-        if (!string.IsNullOrEmpty(metadata.Archive)) {
-            return delegate (object sender, ResolveEventArgs args) {
-                string asmName = new AssemblyName(args.Name).Name + ".dll";
-                using (ZipFile zip = ZipFile.Read(metadata.Archive)) {
-                    foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName != asmName) {
-                            continue;
-                        }
-                        using (MemoryStream ms = new MemoryStream()) {
-                            entry.Extract(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            return Assembly.Load(ms.GetBuffer());
-                        }
+    private static ResolveEventHandler GenerateModArchiveAssemblyResolver(this ETGModuleMetadata metadata, Dictionary<string, string> assemblyArchiveFileMapping)
+    {
+        return delegate (object sender, ResolveEventArgs args)
+        {
+            string asmName = new AssemblyName(args.Name).Name + ".dll";
+            if (!assemblyArchiveFileMapping.TryGetValue(asmName, out string entryName))
+            {
+                return null;
+            }
+
+            using (ZipFile zip = ZipFile.Read(metadata.Archive))
+            {
+                var entry = zip[entryName];
+                if (entry != null)
+                {
+                    using (var ms = new MemoryStream((int)entry.UncompressedSize))
+                    {
+                        entry.Extract(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        return Assembly.Load(ms.GetBuffer());
                     }
                 }
+            }
+
+            return null;
+        };
+    }
+
+    private static ResolveEventHandler GenerateModDirectoryAssemblyResolver(this ETGModuleMetadata metadata)
+    {
+        return delegate (object sender, ResolveEventArgs args)
+        {
+            string asmPath = Path.Combine(metadata.Directory, new AssemblyName(args.Name).Name + ".dll");
+            if (!File.Exists(asmPath))
+            {
                 return null;
-            };
-        }
-        if (!string.IsNullOrEmpty(metadata.Directory)) {
-            return delegate (object sender, ResolveEventArgs args) {
-                string asmPath = Path.Combine(metadata.Directory, new AssemblyName(args.Name).Name + ".dll");
-                if (!File.Exists(asmPath)) {
-                    return null;
-                }
-                return Assembly.LoadFrom(asmPath);
-            };
-        }
-        return null;
+            }
+            return Assembly.LoadFrom(asmPath);
+        };
     }
 
     public static void Exit() {
