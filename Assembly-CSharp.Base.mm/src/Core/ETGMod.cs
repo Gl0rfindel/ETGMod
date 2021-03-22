@@ -387,7 +387,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule) type.GetConstructor(Type.EmptyTypes).Invoke(Array<object>.Empty);
 
             module.Metadata = metadata;
 
@@ -457,7 +457,7 @@ public static partial class ETGMod {
                 continue;
             }
 
-            ETGModule module = (ETGModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            ETGModule module = (ETGModule) type.GetConstructor(Type.EmptyTypes).Invoke(Array<object>.Empty);
 
             module.Metadata = metadata;
 
@@ -594,8 +594,7 @@ public static partial class ETGMod {
     public static void CallInEachModule(string methodName, object[] args = null) {
         Type[] argsTypes = null;
         if (args == null) {
-            args = _EmptyObjectArray;
-            args = _EmptyTypeArray;
+            args = Type.EmptyTypes;
         }
         for (int i = 0; i < _ModuleTypes.Count; i++) {
             Dictionary<string, MethodInfo> moduleMethods = _ModuleMethods[i];
@@ -640,10 +639,6 @@ public static partial class ETGMod {
         }
         return args[0];
     }
-
-    // A shared object a day keeps the GC away!
-    private readonly static Type[] _EmptyTypeArray = new Type[0];
-    private readonly static object[] _EmptyObjectArray = new object[0];
 
     public class Profile {
         public readonly int Id;
