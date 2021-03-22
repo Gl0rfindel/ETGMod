@@ -25,7 +25,7 @@ public static partial class ETGMod {
         #if TRAVIS
         new Profile(2, "travis");
         #else
-        new Profile(0, "ggb"); // no tag
+        new Profile(0, "ggb+1.1"); // no tag
         #endif
 
     public static string BaseUIVersion {
