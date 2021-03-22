@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
-using System.Collections;
 using AttachPoint = tk2dSpriteDefinition.AttachPoint;
 using YamlDotNet;
 using YamlDotNet.Serialization;
@@ -44,10 +43,15 @@ public static partial class ETGMod {
         /// </summary>
         public readonly static Dictionary<string, Texture2D> TextureMap = new Dictionary<string, Texture2D>();
 
+        private readonly static Dictionary<string, AssetSpriteCollectionLookup> _assetSpriteCollections = new Dictionary<string, AssetSpriteCollectionLookup>();
+
         public static bool DumpResources = false;
 
         public static bool DumpSprites = false;
+
         public static bool DumpSpritesMetadata = false;
+
+        public static bool EnabledLegacyFileSystemTextureMapping = false;
 
         private readonly static Vector2[] _DefaultUVs = {
             new Vector2(0f, 0f),
@@ -90,8 +94,19 @@ public static partial class ETGMod {
             if (metadata.AssetType == null) {
                 path = RemoveExtension(path, out metadata.AssetType);
             }
+
             if (metadata.AssetType == t_AssetDirectory) {
                 return MapDirs[path] = metadata;
+            } else if (metadata.AssetType == t_Texture2D && path.StartsWith("sprites/")) {
+                int index = path.IndexOf('/', 8);
+                if (index >= 0) {
+                    string collectionName = path.Substring(8, index - 8);
+                    if (!_assetSpriteCollections.TryGetValue(collectionName, out var lookup)) {
+                        lookup = _assetSpriteCollections[collectionName] = new AssetSpriteCollectionLookup(collectionName);
+                    }
+
+                    lookup[path] = metadata;
+                }
             }
 
             return Map[path] = metadata;
@@ -270,40 +285,50 @@ public static partial class ETGMod {
             if (sprites == null) {
                 return;
             }
+
             string path = "sprites/" + sprites.spriteCollectionName;
 
-            Texture2D replacement;
-            AssetMetadata metadata;
-
-            Texture mainTexture = sprites.materials?.Length != 0 ? sprites.materials[0]?.mainTexture : null;
-            string atlasName = mainTexture?.name;
-            if (mainTexture != null && (atlasName == null || atlasName.Length == 0 || atlasName[0] != '~')) {
-                     if (TextureMap.TryGetValue(path, out replacement)) { }
-                else if (TryGetMapped          (path, out metadata))    { TextureMap[path] = replacement = Resources.Load<Texture2D>(path); }
-                else {
-                    foreach (KeyValuePair<string, AssetMetadata> mapping in Map) {
-                        if (!mapping.Value.HasData) continue;
-                        string resourcePath = mapping.Key;
-                        if (!resourcePath.StartsWithInvariant("sprites/@")) continue;
-                        string spriteName = resourcePath.Substring(9);
-                        if (sprites.spriteCollectionName.Contains(spriteName)) {
-                            string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
-                            if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath)) {
-                                Directory.GetParent(copyPath).Create();
-                                File.Copy(mapping.Value.File, copyPath);
+            {
+                Texture mainTexture = sprites.materials?.Length != 0 ? sprites.materials[0]?.mainTexture : null;
+                string atlasName = mainTexture?.name;
+                if (mainTexture != null && (atlasName == null || atlasName.Length == 0 || atlasName[0] != '~'))
+                {
+                    if (TextureMap.TryGetValue(path, out var replacement)) { }
+                    else if (TryGetMapped(path, out _)) { TextureMap[path] = replacement = Resources.Load<Texture2D>(path); }
+                    else
+                    {
+                        if (EnabledLegacyFileSystemTextureMapping)
+                        {
+                            foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
+                            {
+                                if (!mapping.Value.HasData) continue;
+                                string resourcePath = mapping.Key;
+                                if (!resourcePath.StartsWithInvariant("sprites/@")) continue;
+                                string spriteName = resourcePath.Substring(9);
+                                if (sprites.spriteCollectionName.Contains(spriteName))
+                                {
+                                    string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
+                                    if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
+                                    {
+                                        Directory.GetParent(copyPath).Create();
+                                        File.Copy(mapping.Value.File, copyPath);
+                                    }
+                                    TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
+                                    break;
+                                }
                             }
-                            TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
-                            break;
                         }
                     }
-                }
 
-                if (replacement != null) {
-                    // Full atlas texture replacement.
-                    replacement.name = '~' + atlasName;
-                    for (int i = 0; i < sprites.materials.Length; i++) {
-                        if (sprites.materials[i]?.mainTexture == null) continue;
-                        sprites.materials[i].mainTexture = replacement;
+                    if (replacement != null)
+                    {
+                        // Full atlas texture replacement.
+                        replacement.name = '~' + atlasName;
+                        for (int i = 0; i < sprites.materials.Length; i++)
+                        {
+                            if (sprites.materials[i]?.mainTexture == null) continue;
+                            sprites.materials[i].mainTexture = replacement;
+                        }
                     }
                 }
             }
@@ -315,93 +340,30 @@ public static partial class ETGMod {
                 Dump.DumpSpriteCollectionMetadata(sprites);
             }
 
+            if (!_assetSpriteCollections.TryGetValue(sprites.spriteCollectionName, out var lookup))
+                return;
+
+            if (!lookup.TakeUnprocessedChanges(out var unprocessedChanges))
+                return;
+
             List<tk2dSpriteDefinition> list = null;
-            foreach (KeyValuePair<string, AssetMetadata> mapping in Map) {
+            foreach (KeyValuePair<string, AssetMetadata> mapping in unprocessedChanges) {
                 string assetPath = mapping.Key;
-                if (assetPath.Length <= path.Length + 1) {
-                    continue;
+                try
+                {
+                    string name = assetPath.Substring(path.Length + 1);
+                    ProcessFrame(sprites, name, assetPath, ref list);
                 }
-                if (!assetPath.StartsWithInvariant(path) || mapping.Value.AssetType != t_Texture2D) {
-                    continue;
-                }
-
-                string name = assetPath.Substring(path.Length + 1);
-                tk2dSpriteDefinition frame = sprites.GetSpriteDefinition(name);
-
-                if (frame != null && frame.materialInst != null) {
-                    Texture2D origTex = (Texture2D) frame.materialInst.mainTexture;
-                    if (Packer.IsPageTexture(origTex)) {
-                        continue;
-                    }
-                }
-
-                if (!TextureMap.TryGetValue(assetPath, out replacement))
-                    replacement = TextureMap[assetPath] = Resources.Load<Texture2D>(assetPath);
-                if (replacement == null) {
-                    continue;
-                }
-
-                if (frame == null && name[0] == '@') {
-                    name = name.Substring(1);
-                    for (int i = 0; i < sprites.spriteDefinitions.Length; i++) {
-                        tk2dSpriteDefinition frame_ = sprites.spriteDefinitions[i];
-                        if (frame_.Valid && frame_.name.Contains(name)) {
-                            frame = frame_;
-                            name = frame_.name;
-                            break;
-                        }
-                    }
-                    if (frame == null) {
-                        continue;
-                    }
-                }
-
-                if (frame != null) {
-                    // Replace old sprite.
-                    frame.ReplaceTexture(replacement);
-
-                } else {
-                    // Add new sprite.
-                    if (list == null) {
-                        list = new List<tk2dSpriteDefinition>(sprites.spriteDefinitions?.Length ?? 32);
-                        if (sprites.spriteDefinitions != null) {
-                            list.AddRange(sprites.spriteDefinitions);
-                        }
-                    }
-                    frame = new tk2dSpriteDefinition();
-                    frame.name = name;
-                    frame.material = sprites.materials[0];
-                    frame.ReplaceTexture(replacement);
-
-                    AssetSpriteData frameData = new AssetSpriteData();
-                    AssetMetadata jsonMetadata = GetMapped(assetPath + ".json");
-                    if (jsonMetadata != null) {
-                        frameData = JSONHelper.ReadJSON<AssetSpriteData>(jsonMetadata.Stream);
-                    }
-
-                    frame.normals = new Vector3[0];
-                    frame.tangents = new Vector4[0];
-                    frame.indices = new int[] { 0, 3, 1, 2, 3, 0 };
-
-                    // TODO figure out this black magic
-                    const float pixelScale = 0.0625f;
-                    float w = replacement.width * pixelScale;
-                    float h = replacement.height * pixelScale;
-                    frame.position0 = new Vector3(0f, 0f, 0f);
-                    frame.position1 = new Vector3(w, 0f, 0f);
-                    frame.position2 = new Vector3(0f, h, 0f);
-                    frame.position3 = new Vector3(w, h, 0f);
-                    frame.boundsDataCenter = frame.untrimmedBoundsDataCenter = new Vector3(w / 2f, h / 2f, 0f);
-                    frame.boundsDataExtents = frame.untrimmedBoundsDataExtents = new Vector3(w, h, 0f);
-
-                    sprites.SetAttachPoints(list.Count, frameData.attachPoints);
-
-                    list.Add(frame);
+                catch (Exception e)
+                {
+                    Debug.Log($"Exception while processing {assetPath} for sprite collection {sprites.spriteCollectionName}");
+                    Debug.LogException(e);
                 }
             }
+
             if (list != null) {
                 sprites.spriteDefinitions = list.ToArray();
-                ReflectionHelper.SetValue(f_tk2dSpriteCollectionData_spriteNameLookupDict, sprites, null);
+                f_tk2dSpriteCollectionData_spriteNameLookupDict.SetValue(sprites, null);
             }
 
             if (sprites.hasPlatformData) {
@@ -424,19 +386,26 @@ public static partial class ETGMod {
                      if (TextureMap.TryGetValue(path, out replacement)) { }
                 else if (TryGetMapped(path, out metadata)) { TextureMap[path] = replacement = Resources.Load<Texture2D>(path); }
                 else {
-                    foreach (KeyValuePair<string, AssetMetadata> mapping in Map) {
-                        if (!mapping.Value.HasData) continue;
-                        string resourcePath = mapping.Key;
-                        if (!resourcePath.StartsWithInvariant("sprites/DFGUI/@")) continue;
-                        string spriteName = resourcePath.Substring(9);
-                        if (atlas.name.Contains(spriteName)) {
-                            string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
-                            if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath)) {
-                                Directory.GetParent(copyPath).Create();
-                                File.Copy(mapping.Value.File, copyPath);
+
+                    if (EnabledLegacyFileSystemTextureMapping)
+                    {
+                        foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
+                        {
+                            if (!mapping.Value.HasData) continue;
+                            string resourcePath = mapping.Key;
+                            if (!resourcePath.StartsWithInvariant("sprites/DFGUI/@")) continue;
+                            string spriteName = resourcePath.Substring(9);
+                            if (atlas.name.Contains(spriteName))
+                            {
+                                string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
+                                if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
+                                {
+                                    Directory.GetParent(copyPath).Create();
+                                    File.Copy(mapping.Value.File, copyPath);
+                                }
+                                TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
+                                break;
                             }
-                            TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
-                            break;
                         }
                     }
                 }
@@ -478,6 +447,89 @@ public static partial class ETGMod {
             }
         }
 
+        private static void ProcessFrame(tk2dSpriteCollectionData sprites, string name, string assetPath, ref List<tk2dSpriteDefinition> newSprites)
+        {
+            tk2dSpriteDefinition frame = sprites.GetSpriteDefinition(name);
+
+            if (frame != null && frame.materialInst != null)
+            {
+                if (Packer.IsPageTexture(frame.materialInst.mainTexture))
+                    return;
+            }
+
+            if (!TextureMap.TryGetValue(assetPath, out var replacement))
+                replacement = TextureMap[assetPath] = Resources.Load<Texture2D>(assetPath);
+
+            if (replacement == null)
+                return;
+
+            if (frame == null && name[0] == '@')
+            {
+                name = name.Substring(1);
+                for (int i = 0; i < sprites.spriteDefinitions.Length; i++)
+                {
+                    tk2dSpriteDefinition frame_ = sprites.spriteDefinitions[i];
+                    if (frame_.Valid && frame_.name.Contains(name))
+                    {
+                        frame = frame_;
+                        name = frame_.name;
+                        break;
+                    }
+                }
+
+                if (frame == null)
+                    return;
+            }
+
+            if (frame != null)
+            {
+                // Replace old sprite.
+                frame.ReplaceTexture(replacement);
+            }
+            else
+            {
+                // Add new sprite.
+                if (newSprites == null)
+                {
+                    newSprites = new List<tk2dSpriteDefinition>(sprites.spriteDefinitions?.Length ?? 32);
+                    if (sprites.spriteDefinitions != null)
+                    {
+                        newSprites.AddRange(sprites.spriteDefinitions);
+                    }
+                }
+
+                frame = new tk2dSpriteDefinition();
+                frame.name = name;
+                frame.material = sprites.materials[0];
+                frame.ReplaceTexture(replacement);
+
+                AssetSpriteData frameData = default;
+                AssetMetadata jsonMetadata = GetMapped(assetPath + ".json");
+                if (jsonMetadata != null)
+                {
+                    frameData = JSONHelper.ReadJSON<AssetSpriteData>(jsonMetadata.Stream);
+                }
+
+                frame.normals = Array<Vector3>.Empty;
+                frame.tangents = Array<Vector4>.Empty;
+                frame.indices = new int[] { 0, 3, 1, 2, 3, 0 };
+
+                // TODO figure out this black magic
+                const float pixelScale = 0.0625f;
+                float w = replacement.width * pixelScale;
+                float h = replacement.height * pixelScale;
+                frame.position0 = new Vector3(0f, 0f, 0f);
+                frame.position1 = new Vector3(w, 0f, 0f);
+                frame.position2 = new Vector3(0f, h, 0f);
+                frame.position3 = new Vector3(w, h, 0f);
+                frame.boundsDataCenter = frame.untrimmedBoundsDataCenter = new Vector3(w / 2f, h / 2f, 0f);
+                frame.boundsDataExtents = frame.untrimmedBoundsDataExtents = new Vector3(w, h, 0f);
+
+                sprites.SetAttachPoints(newSprites.Count, frameData.attachPoints);
+
+                newSprites.Add(frame);
+            }
+        }
     }
 
     public static void Handle(this tk2dBaseSprite sprite) {
@@ -505,5 +557,4 @@ public static partial class ETGMod {
     public static void ReplaceTexture(this tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true) {
         Assets.ReplaceTexture(frame, replacement, pack);
     }
-
 }

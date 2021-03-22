@@ -56,10 +56,17 @@ public class RuntimeAtlasPacker
 
     public bool IsPageTexture(Texture2D tex)
     {
+        return IsPageTexture((Texture)tex);
+    }
+
+    internal bool IsPageTexture(Texture tex)
+    {
         for (int i = 0; i < Pages.Count; i++)
         {
-            if (ReferenceEquals(Pages[i].Texture, tex)) return true;
+            if (ReferenceEquals(Pages[i].Texture, tex))
+                return true;
         }
+
         return false;
     }
 }
