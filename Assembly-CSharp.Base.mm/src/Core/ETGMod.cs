@@ -124,7 +124,6 @@ public static partial class ETGMod {
         ETGModGUI.Create();
 		MultiplayerManager.Create();
 
-        _ScanBackends();
         _LoadMods();
 
         Assets.Crawl(ResourcesDirectory);
@@ -169,28 +168,8 @@ public static partial class ETGMod {
         Gungeon.Game.Initialize();
     }
 
-    private static void _ScanBackends() {
-        Debug.Log("Scanning Assembly-CSharp.dll for backends...");
-        Assembly asm = Assembly.GetAssembly(typeof(ETGMod));
-        Type[] types = asm.GetTypes();
-        for (int i = 0; i < types.Length; i++) {
-            Type type = types[i];
-            if (typeof(ETGBackend).IsAssignableFrom(type) && !type.IsAbstract) {
-                InitBackend(type);
-            }
-        }
-    }
     public static void InitBackend(Type type) {
-        ETGBackend module = (ETGBackend) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-        Debug.Log("Initializing backend " + type.FullName);
 
-        // Metadata is pre-set in backends
-
-        Backends.Add(module);
-        AllMods.Add(module);
-        _ModuleTypes.Add(type);
-        _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
-        Debug.Log("Backend " + module.Metadata.Name + " initialized.");
     }
 
 	private static void _CreateModsListFile()
