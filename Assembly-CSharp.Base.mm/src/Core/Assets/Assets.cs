@@ -16,10 +16,6 @@ public static partial class ETGMod {
     /// </summary>
     public static partial class Assets {
 
-        private readonly static Protocol[] _Protocols = {
-            new ItemProtocol()
-        };
-
         public readonly static Type t_Object = typeof(UnityEngine.Object);
         public readonly static Type t_AssetDirectory = typeof(AssetDirectory);
         public readonly static Type t_Texture = typeof(Texture);
@@ -184,13 +180,6 @@ public static partial class ETGMod {
                 path = Player.PlayerReplacement;
             }
 
-            UnityEngine.Object customobj = null;
-            for (int i = 0; i < _Protocols.Length; i++) {
-                var protocol = _Protocols[i];
-                customobj = protocol.Get(path);
-                if (customobj != null) return customobj;
-            }
-
 #if DEBUG
             if (DumpResources) {
                 Dump.DumpResource(path);
@@ -293,30 +282,36 @@ public static partial class ETGMod {
                 string atlasName = mainTexture?.name;
                 if (mainTexture != null && (atlasName == null || atlasName.Length == 0 || atlasName[0] != '~'))
                 {
-                    if (TextureMap.TryGetValue(path, out var replacement)) { }
-                    else if (TryGetMapped(path, out _)) { TextureMap[path] = replacement = Resources.Load<Texture2D>(path); }
-                    else
+                    if (!TextureMap.TryGetValue(path, out var replacement))
                     {
-                        if (EnabledLegacyFileSystemTextureMapping)
+                        if (TryGetMapped(path, out _)) 
+                        { 
+                            TextureMap[path] = replacement = Resources.Load<Texture2D>(path); 
+                        }
+                        else
                         {
-                            foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
+                            if (EnabledLegacyFileSystemTextureMapping)
                             {
-                                if (!mapping.Value.HasData) continue;
-                                string resourcePath = mapping.Key;
-                                if (!resourcePath.StartsWithInvariant("sprites/@")) continue;
-                                string spriteName = resourcePath.Substring(9);
-                                if (sprites.spriteCollectionName.Contains(spriteName))
+                                foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
                                 {
-                                    string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
-                                    if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
+                                    if (!mapping.Value.HasData) continue;
+                                    string resourcePath = mapping.Key;
+                                    if (!resourcePath.StartsWithInvariant("sprites/@")) continue;
+                                    string spriteName = resourcePath.Substring(9);
+                                    if (sprites.spriteCollectionName.Contains(spriteName))
                                     {
-                                        Directory.GetParent(copyPath).Create();
-                                        File.Copy(mapping.Value.File, copyPath);
+                                        string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
+                                        if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
+                                        {
+                                            Directory.GetParent(copyPath).Create();
+                                            File.Copy(mapping.Value.File, copyPath);
+                                        }
+                                        TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
+                                        break;
                                     }
-                                    TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
-                                    break;
                                 }
                             }
+
                         }
                     }
 

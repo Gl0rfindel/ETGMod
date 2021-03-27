@@ -9,7 +9,9 @@ public static partial class ETGMod {
             public string Prefix;
 
             public UnityEngine.Object Get(string path) {
-                if (!path.StartsWithInvariant(Prefix)) return null;
+                if (!path.StartsWithInvariant(Prefix)) 
+                    return null;
+                Console.WriteLine($"Protocol {Prefix} {path}");
                 return GetObject(path.Substring(Prefix.Length));
             }
             internal abstract UnityEngine.Object GetObject(string path);
