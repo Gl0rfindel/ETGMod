@@ -111,18 +111,19 @@ public static partial class ETGMod {
         }
 
         public static void HandleObject(UnityEngine.Object o) {
-            if (!o) return;
+            if (!o) 
+                return;
 
             if (!ShouldRunHooks())
                 return;
 
-            if (o is GameObject) {
-                HandleGameObject((GameObject) o, true);
+            if (o is GameObject go) {
+                HandleGameObject(go, true);
                 return;
             }
 
-            if (o is Component) {
-                HandleComponent((Component) o);
+            if (o is Component c) {
+                HandleComponent(c);
                 return;
             }
         }

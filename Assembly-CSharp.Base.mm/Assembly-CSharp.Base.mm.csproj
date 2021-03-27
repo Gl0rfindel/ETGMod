@@ -82,6 +82,7 @@
     <Compile Include="src\AssetMetadata.cs" />
     <Compile Include="src\Core\Array{T}.cs" />
     <Compile Include="src\Core\Assets\AssetSpriteCollectionLookup.cs" />
+    <Compile Include="src\Core\GunAnimationSpriteCache.cs" />
     <Compile Include="src\ETGGUI\ETGDamageIndicatorGUI.cs" />
     <Compile Include="src\ETGGUI\FontConverter.cs" />
     <!--Something went wrong while time-traveling... whoops!-->

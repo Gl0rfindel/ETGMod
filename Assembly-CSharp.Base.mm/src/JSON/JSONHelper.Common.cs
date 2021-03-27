@@ -75,10 +75,13 @@ public static partial class JSONHelper {
     }
 
     public static Type FindType(string fullname, string ns = null, string name = null) {
+
         Type type;
         if (_TypeCache.TryGetValue(fullname, out type)) {
             return type;
         }
+
+        Console.WriteLine($"JSON FindType: {fullname} {ns} {name}");
 
         Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
         for (int i = 0; i < asms.Length; i++) {

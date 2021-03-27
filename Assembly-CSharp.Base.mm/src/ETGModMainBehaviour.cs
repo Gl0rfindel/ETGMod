@@ -11,10 +11,15 @@ public class ETGModMainBehaviour : MonoBehaviour {
 
     public static ETGModMainBehaviour Instance;
 
+    public static Stopwatch InitStopwatch = new Stopwatch();
+
+    public static Stopwatch StartStopwatch = new Stopwatch();
+
     public static Stopwatch StartupStopwatch = new Stopwatch();
 
     public void Awake() {
         StartupStopwatch.Start();
+        InitStopwatch.Start();
         DontDestroyOnLoad(gameObject);
 #pragma warning disable CS0618
         ETGMod.StartCoroutine = StartCoroutine;
@@ -22,12 +27,17 @@ public class ETGModMainBehaviour : MonoBehaviour {
         ETGMod.StartGlobalCoroutine = StartCoroutine;
         ETGMod.StopGlobalCoroutine = StopCoroutine;
         ETGMod.Init();
+        InitStopwatch.Stop();
     }
 
     public void Start() {
+        StartStopwatch.Start();
         ETGMod.Start();
+        StartStopwatch.Stop();
         StartupStopwatch.Stop();
-        Debug.Log($"MTG startup elapsed: {StartupStopwatch.Elapsed.TotalSeconds}s");
+        Debug.Log($"MTG init elapsed: {InitStopwatch.Elapsed.TotalSeconds}s");
+        Debug.Log($"MTG start elapsed: {StartStopwatch.Elapsed.TotalSeconds}s");
+        Debug.Log($"MTG full startup elapsed: {StartupStopwatch.Elapsed.TotalSeconds}s");
     }
 
     public void Update() {

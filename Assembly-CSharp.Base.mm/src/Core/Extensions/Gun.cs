@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 
 public static class GunExt {
+
+    private static GunAnimationSpriteCache SpriteCache = new GunAnimationSpriteCache();
+
     public static void SetName(this PickupObject item, string text) {
         ETGMod.Databases.Strings.Items.Set(item.encounterTrackable.journalData.PrimaryDisplayName, text);
     }
@@ -30,45 +33,32 @@ public static class GunExt {
         gun.alternateShootAnimation = gun.UpdateAnimation("alternate_shoot", collection, true);
         gun.alternateReloadAnimation = gun.UpdateAnimation("alternate_reload", collection, true);
     }
-    public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false) {
+
+    public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false)
+    {
         collection = collection ?? ETGMod.Databases.Items.WeaponCollection;
+        SpriteCache.UpdateCollection(collection);
+        var frames = SpriteCache.TryGetAnimationFrames(collection.name, gun.name, name);
+
+        if (frames == null)
+            return null;
 
         string clipName = gun.name + "_" + name;
-        string prefix = clipName + "_";
-        int prefixLength = prefix.Length;
-
-        List<tk2dSpriteAnimationFrame> frames = new List<tk2dSpriteAnimationFrame>();
-        for (int i = 0; i < collection.spriteDefinitions.Length; i++) {
-            tk2dSpriteDefinition sprite = collection.spriteDefinitions[i];
-            if (sprite.Valid && sprite.name.StartsWithInvariant(prefix)) {
-                frames.Add(new tk2dSpriteAnimationFrame() {
-                    spriteCollection = collection,
-                    spriteId = i
-                });
-            }
-        }
-
-        if (frames.Count == 0) {
-            return null;
-        }
-
         tk2dSpriteAnimationClip clip = gun.spriteAnimator.Library.GetClipByName(clipName);
-        if (clip == null) {
+        if (clip == null)
+        {
             clip = new tk2dSpriteAnimationClip();
             clip.name = clipName;
             clip.fps = 15;
-            if (returnToIdle) {
+            if (returnToIdle)
+            {
                 clip.wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
             }
             Array.Resize(ref gun.spriteAnimator.Library.clips, gun.spriteAnimator.Library.clips.Length + 1);
             gun.spriteAnimator.Library.clips[gun.spriteAnimator.Library.clips.Length - 1] = clip;
         }
 
-        frames.Sort((x, y) =>
-            int.Parse(collection.spriteDefinitions[x.spriteId].name.Substring(prefixLength)) -
-            int.Parse(collection.spriteDefinitions[y.spriteId].name.Substring(prefixLength))
-           );
-        clip.frames = frames.ToArray();
+        clip.frames = frames;
 
         return clipName;
     }
