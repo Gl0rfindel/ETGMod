@@ -1,15 +1,9 @@
-﻿using UnityEngine;
-using System.Collections.Generic;
-using System.Collections;
-using System;
-using SGUI;
+﻿using System.Collections;
 using System.IO;
+using SGUI;
+using UnityEngine;
 
 public class ETGModLoaderMenu : ETGModMenu {
-
-    public readonly static List<ModRepo> Repos = new List<ModRepo>() {
-        new LastBulletModRepo()
-    };
 
     public SGroup DisabledListGroup;
     public SGroup ModListGroup;
@@ -105,9 +99,6 @@ public class ETGModLoaderMenu : ETGModMenu {
 
     public override void OnOpen() {
         RefreshMods();
-        if (_C_RefreshOnline == null) {
-            RefreshOnline();
-        }
         base.OnOpen();
     }
 
@@ -144,34 +135,6 @@ public class ETGModLoaderMenu : ETGModMenu {
             yield return null;
         }
 
-    }
-
-    protected Coroutine _C_RefreshOnline;
-    public void RefreshOnline() {
-        _C_RefreshOnline?.StopGlobal();
-        _C_RefreshOnline = _RefreshOnline().StartGlobal();
-    }
-    protected virtual IEnumerator _RefreshOnline() {
-        ModOnlineListGroup.Children.Clear();
-        SPreloader preloader = new SPreloader();
-        ModOnlineListGroup.Children.Add(preloader);
-        yield return null;
-
-        for (int i = 0; i < Repos.Count; i++) {
-            IEnumerator mods = Repos[i].GetRemoteMods();
-            while (mods.MoveNext()) {
-                if (mods.Current == null || !(mods.Current is RemoteMod)) {
-                    yield return null;
-                    continue;
-                }
-
-                RemoteMod mod = (RemoteMod) mods.Current;
-                ModOnlineListGroup.Children.Add(NewEntry(mod.Name, IconMod));
-                yield return null;
-            }
-        }
-
-        preloader.Modifiers.Add(new SFadeOutShrinkSequence());
     }
 
     public virtual SButton NewEntry(string name, Texture icon = null) {
