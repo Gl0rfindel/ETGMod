@@ -1,8 +1,5 @@
-﻿#pragma warning disable RECS0018
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections;
-using System;
 
 internal class AssetSpriteCollectionLookup : IDictionary<string, AssetMetadata>
 {
