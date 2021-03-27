@@ -178,8 +178,6 @@ public class ETGModGUI : MonoBehaviour {
 
     internal static IEnumerator ListAllItemsAndGuns() {
 
-        yield return new WaitForSeconds(1);
-
         int count = 0;
 
         while (PickupObjectDatabase.Instance == null)
@@ -223,8 +221,6 @@ public class ETGModGUI : MonoBehaviour {
                 name = name + "_" + floornumber;
             }
 
-
-
             if (ETGModConsole.AllItems.ContainsKey(name)) {
                 int appendindex = 2;
                 while (ETGModConsole.AllItems.ContainsKey (name + "_" + appendindex.ToString())) {
@@ -233,7 +229,7 @@ public class ETGModGUI : MonoBehaviour {
                 name = name + "_" + appendindex.ToString ();
             }
             ETGModConsole.AllItems.Add(name, i);
-            if (count >= 30) {
+            if (count >= 100) {
                 count = 0;
                 yield return null;
             }
@@ -241,7 +237,6 @@ public class ETGModGUI : MonoBehaviour {
 
         //Add command arguments.
         Debug.Log(ETGModConsole.AllItems.Values.Count + " give command args");
-
     }
 
 }
