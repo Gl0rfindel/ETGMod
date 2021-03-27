@@ -271,62 +271,12 @@ public static partial class ETGMod {
         }
 
         public static void HandleSprites(tk2dSpriteCollectionData sprites) {
-            if (sprites == null) {
+            if (!sprites) {
                 return;
             }
 
             string path = "sprites/" + sprites.spriteCollectionName;
-
-            {
-                Texture mainTexture = sprites.materials?.Length != 0 ? sprites.materials[0]?.mainTexture : null;
-                string atlasName = mainTexture?.name;
-                if (mainTexture != null && (atlasName == null || atlasName.Length == 0 || atlasName[0] != '~'))
-                {
-                    if (!TextureMap.TryGetValue(path, out var replacement))
-                    {
-                        if (TryGetMapped(path, out _)) 
-                        { 
-                            TextureMap[path] = replacement = Resources.Load<Texture2D>(path); 
-                        }
-                        else
-                        {
-                            if (EnabledLegacyFileSystemTextureMapping)
-                            {
-                                foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
-                                {
-                                    if (!mapping.Value.HasData) continue;
-                                    string resourcePath = mapping.Key;
-                                    if (!resourcePath.StartsWithInvariant("sprites/@")) continue;
-                                    string spriteName = resourcePath.Substring(9);
-                                    if (sprites.spriteCollectionName.Contains(spriteName))
-                                    {
-                                        string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
-                                        if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
-                                        {
-                                            Directory.GetParent(copyPath).Create();
-                                            File.Copy(mapping.Value.File, copyPath);
-                                        }
-                                        TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
-                                        break;
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
-                    if (replacement != null)
-                    {
-                        // Full atlas texture replacement.
-                        replacement.name = '~' + atlasName;
-                        for (int i = 0; i < sprites.materials.Length; i++)
-                        {
-                            if (sprites.materials[i]?.mainTexture == null) continue;
-                            sprites.materials[i].mainTexture = replacement;
-                        }
-                    }
-                }
-            }
+            ProcessSpritePath(sprites, path);
 
             if (DumpSprites) {
                 Dump.DumpSpriteCollection(sprites);
@@ -439,6 +389,76 @@ public static partial class ETGMod {
             } else {
                 frame.materialInst.mainTexture = replacement;
                 frame.uvs = _DefaultUVs;
+            }
+        }
+
+        private static void ProcessSpritePath(tk2dSpriteCollectionData sprites, string path)
+        {
+            if (sprites.materials == null || sprites.materials.Length == 0)
+                return;
+
+            var material = sprites.materials[0];
+            if (!material)
+                return;
+
+            Texture mainTexture = material.mainTexture;
+            if (!mainTexture)
+                return;
+
+            string atlasName = mainTexture.name;
+            if (string.IsNullOrEmpty(atlasName))
+                return;
+
+            if (atlasName[0] == '~')
+                return;
+
+            if (!TextureMap.TryGetValue(path, out var replacement))
+            {
+                if (TryGetMapped(path, out _))
+                {
+                    TextureMap[path] = replacement = Resources.Load<Texture2D>(path);
+                }
+                else
+                {
+                    if (EnabledLegacyFileSystemTextureMapping)
+                    {
+                        foreach (KeyValuePair<string, AssetMetadata> mapping in Map)
+                        {
+                            if (!mapping.Value.HasData) 
+                                continue;
+
+                            string resourcePath = mapping.Key;
+                            if (!resourcePath.StartsWithInvariant("sprites/@")) 
+                                continue;
+
+                            string spriteName = resourcePath.Substring(9);
+                            if (sprites.spriteCollectionName.Contains(spriteName))
+                            {
+                                string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
+                                if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath))
+                                {
+                                    Directory.GetParent(copyPath).Create();
+                                    File.Copy(mapping.Value.File, copyPath);
+                                }
+                                TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (replacement)
+            {
+                // Full atlas texture replacement.
+                replacement.name = '~' + atlasName;
+                for (int i = 0; i < sprites.materials.Length; i++)
+                {
+                    if (sprites.materials[i]?.mainTexture == null) 
+                        continue;
+
+                    sprites.materials[i].mainTexture = replacement;
+                }
             }
         }
 
