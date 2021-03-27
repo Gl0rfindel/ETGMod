@@ -185,7 +185,7 @@ public sealed class ItemDB {
 
         item.encounterTrackable.EncounterGuid = item.name;
 
-        item.encounterTrackable.prerequisites = new DungeonPrerequisite[0];
+        item.encounterTrackable.prerequisites = Array<DungeonPrerequisite>.Empty;
         item.encounterTrackable.journalData.SuppressKnownState = true;
 
         string keyName = "#" + item.name.Replace(" ", "").ToUpperInvariant();
@@ -197,8 +197,7 @@ public sealed class ItemDB {
     }
 
     public PickupObject GetModItemByName(string name) {
-        PickupObject item;
-        if (ModItemMap.TryGetValue(name, out item)) {
+        if (ModItemMap.TryGetValue(name, out var item)) {
             return item;
         }
         return null;
