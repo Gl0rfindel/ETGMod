@@ -302,10 +302,8 @@ public static partial class ETGMod {
             Texture2D icon = null;
             foreach (ZipEntry entry in zip.Entries) {
                 if (entry.FileName == "metadata.txt") {
-                    using (MemoryStream ms = new MemoryStream()) {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        metadata = ETGModuleMetadata.Parse(archive, "", ms);
+                    using (var readStream = entry.OpenReader()) {
+                        metadata = ETGModuleMetadata.Parse(archive, "", readStream);
                     }
                     continue;
                 }
@@ -313,7 +311,7 @@ public static partial class ETGMod {
                 if (entry.FileName == "icon.png") {
                     icon = new Texture2D(2, 2);
                     icon.name = "icon";
-                    using (MemoryStream ms = new MemoryStream()) {
+                    using (var ms = new MemoryStream((int)entry.UncompressedSize)) {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         icon.LoadImage(ms.GetBuffer());
@@ -354,7 +352,7 @@ public static partial class ETGMod {
             foreach (ZipEntry entry in zip.Entries) {
                 string entryName = entry.FileName.Replace("\\", "/");
                 if (entryName == metadata.DLL) {
-                    using (MemoryStream ms = new MemoryStream()) {
+                    using (var ms = new MemoryStream((int)entry.UncompressedSize)) {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         if (metadata.Prelinked) {
