@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Ionic.Zip;
-using System.Runtime.InteropServices;
 using System.Collections;
 using SGUI;
 using ETGGUI;
@@ -144,7 +143,7 @@ public static partial class ETGMod {
 
         _InitializeAPIs();
 
-        CallInEachModule("Init");
+        CallInEachModule(mod => mod.Init());
     }
 
     public static void Start() {
@@ -156,7 +155,8 @@ public static partial class ETGMod {
         dfInputManager manager = GameUIRoot.Instance.Manager.GetComponent<dfInputManager>();
         manager.Adapter = new SGUIDFInput(manager.Adapter);
 
-        CallInEachModule("Start");
+        CallInEachModule(mod => mod.Start());
+
         // Needs to happen late as mods can add their own guns.
         StartGlobalCoroutine(ETGModGUI.ListAllItemsAndGuns());
     }
@@ -520,8 +520,7 @@ public static partial class ETGMod {
 
     public static void Exit() {
         // TODO
-
-        CallInEachModule("Exit");
+        CallInEachModule(mod => mod.Exit());
     }
 
     /// <summary>
@@ -655,6 +654,15 @@ public static partial class ETGMod {
             args[0] = (T) ReflectionHelper.InvokeMethod(method, module, args);
         }
         return args[0];
+    }
+
+    private static void CallInEachModule(Action<ETGModule> modAction)
+    {
+        for (int i = 0; i < AllMods.Count; i++)
+        {
+            var mod = AllMods[i];
+            modAction(mod);
+        }
     }
 
     public class Profile {
