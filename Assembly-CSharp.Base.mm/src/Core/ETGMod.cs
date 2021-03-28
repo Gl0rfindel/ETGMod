@@ -309,11 +309,8 @@ public static partial class ETGMod {
                 if (entry.FileName == "icon.png") {
                     icon = new Texture2D(2, 2);
                     icon.name = "icon";
-                    using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        icon.LoadImage(ms.GetBuffer());
-                    }
+                    var iconData = entry.ReadAllBytes();
+                    icon.LoadImage(iconData);
                     icon.filterMode = FilterMode.Point;
                     continue;
                 }
@@ -362,10 +359,7 @@ public static partial class ETGMod {
                 } else {
                     byte[] data = null;
                     if (entryName.StartsWith("sprites/") && !entry.IsDirectory) {
-                        using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
-                            entry.Extract(ms);
-                            data = ms.ToArray();
-                        }
+                        data = entry.ReadAllBytes();
                     }
 
                     Assets.AddMapping(entryName, new AssetMetadata(archive, entryName, data) {
@@ -410,7 +404,7 @@ public static partial class ETGMod {
         }
 
         // Fallback metadata in case none is found
-        ETGModuleMetadata metadata = new ETGModuleMetadata() {
+        var metadata = new ETGModuleMetadata() {
             Name = Path.GetFileName(dir),
             Version = new Version(0, 0),
             DLL = "mod.dll"
@@ -481,11 +475,8 @@ public static partial class ETGMod {
             using (ZipFile zip = ZipFile.Read(metadata.Archive)) {
                 var entry = zip[entryName];
                 if (entry != null) {
-                    using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
-                        entry.Extract(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        return Assembly.Load(ms.GetBuffer());
-                    }
+                    var data = entry.ReadAllBytes();
+                    return Assembly.Load(data);
                 }
             }
 
