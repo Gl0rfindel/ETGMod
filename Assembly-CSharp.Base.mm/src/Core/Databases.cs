@@ -8,8 +8,8 @@ public static partial class ETGMod {
     /// ETGMod database configuration.
     /// </summary>
     public static class Databases {
-        public readonly static ItemDB Items = new ItemDB();
-        public readonly static StringDB Strings = new StringDB();
+        public static readonly ItemDB Items = new ItemDB();
+        public static readonly StringDB Strings = new StringDB();
     }
 
 }

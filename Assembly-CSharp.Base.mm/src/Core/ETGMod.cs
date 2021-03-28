@@ -12,7 +12,7 @@ using ETGGUI;
 /// Main ETGMod class. Most of the "Mod the Gungeon" logic flows through here.
 /// </summary>
 public static partial class ETGMod {
-    
+
     public readonly static Version BaseVersion = new Version(0, 3, 3);
     // The following line will be replaced by Travis.
     public readonly static int BaseTravisBuild = 0;
@@ -21,11 +21,11 @@ public static partial class ETGMod {
     /// A higher profile ID means higher instability ("developerness").
     /// </summary>
     public readonly static Profile BaseProfile =
-        #if TRAVIS
+#if TRAVIS
         new Profile(2, "travis");
-        #else
+#else
         new Profile(0, "ggb+1.1"); // no tag
-        #endif
+#endif
 
     public static string BaseUIVersion {
         get {
@@ -68,7 +68,7 @@ public static partial class ETGMod {
     internal static bool SaidTheMagicWord = false;
     internal static bool KeptSinging = false;
 
-	/*
+    /*
     public static string[] LaunchArguments;
 
     private delegate string[] d_mono_runtime_get_main_args(); //ret MonoArray*
@@ -91,7 +91,7 @@ public static partial class ETGMod {
         }
         _Init = true;
 
-		/*
+        /*
         LaunchArguments = PInvokeHelper.Mono.GetDelegate<d_mono_runtime_get_main_args>()();
         for (int i = 1; i < LaunchArguments.Length; i++) {
             string arg = LaunchArguments[i];
@@ -101,8 +101,8 @@ public static partial class ETGMod {
         }
         */
 
-		GameFolder = Path.Combine(Application.dataPath, "..");
-		Debug.Log($"ETGMOD INIT: GAMEFOLDER = {GameFolder}");
+        GameFolder = Path.Combine(Application.dataPath, "..");
+        Debug.Log($"ETGMOD INIT: GAMEFOLDER = {GameFolder}");
         ModsDirectory = Path.Combine(GameFolder, "Mods");
         ModsListFile = Path.Combine(ModsDirectory, "mods.txt");
         RelinkCacheDirectory = Path.Combine(ModsDirectory, "RelinkCache");
@@ -129,14 +129,19 @@ public static partial class ETGMod {
         tk2dBaseSprite[] sprites = UnityEngine.Object.FindObjectsOfType<tk2dBaseSprite>();
         for (int i = 0; i < sprites.Length; i++) {
             tk2dBaseSprite sprite = sprites[i];
-            if (sprite?.Collection == null) continue;
+            if (!sprite) 
+                continue;
+
+            if (!sprite.Collection)
+                continue;
+
             if (sprite.Collection.spriteCollectionName == "ItemCollection") {
                 Databases.Items.ItemCollection = sprite.Collection;
             }
-            if (sprite.Collection.spriteCollectionName == "WeaponCollection") {
+            else if (sprite.Collection.spriteCollectionName == "WeaponCollection") {
                 Databases.Items.WeaponCollection = sprite.Collection;
             }
-            if (sprite.Collection.spriteCollectionName == "WeaponCollection02") {
+            else if (sprite.Collection.spriteCollectionName == "WeaponCollection02") {
                 Databases.Items.WeaponCollection02 = sprite.Collection;
             }
         }
@@ -170,36 +175,30 @@ public static partial class ETGMod {
 
     }
 
-	private static void _CreateModsListFile()
-	{
-		using (StreamWriter writer = File.CreateText(ModsListFile))
-		{
-			writer.WriteLine("# Lines beginning with # are comment lines and thus ignored.");
-			writer.WriteLine("# Each line here should either be the name of a mod .zip or the path to it.");
-			writer.WriteLine("# The order in this .txt is the order in which the mods get loaded.");
-			writer.WriteLine("# Delete this file and it will be auto-filled.");
-			string[] files = Directory.GetFiles(ModsDirectory);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string file = Path.GetFileName(files[i]);
-				if (!file.EndsWithInvariant(".zip"))
-				{
-					continue;
-				}
-				writer.WriteLine(file);
-			}
-			files = Directory.GetDirectories(ModsDirectory);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string file = Path.GetFileName(files[i]);
-				if (file == "RelinkCache")
-				{
-					continue;
-				}
-				writer.WriteLine(file);
-			}
-		}
-	}
+    private static void _CreateModsListFile() {
+        using (StreamWriter writer = File.CreateText(ModsListFile)) {
+            writer.WriteLine("# Lines beginning with # are comment lines and thus ignored.");
+            writer.WriteLine("# Each line here should either be the name of a mod .zip or the path to it.");
+            writer.WriteLine("# The order in this .txt is the order in which the mods get loaded.");
+            writer.WriteLine("# Delete this file and it will be auto-filled.");
+            string[] files = Directory.GetFiles(ModsDirectory);
+            for (int i = 0; i < files.Length; i++) {
+                string file = Path.GetFileName(files[i]);
+                if (!file.EndsWithInvariant(".zip")) {
+                    continue;
+                }
+                writer.WriteLine(file);
+            }
+            files = Directory.GetDirectories(ModsDirectory);
+            for (int i = 0; i < files.Length; i++) {
+                string file = Path.GetFileName(files[i]);
+                if (file == "RelinkCache") {
+                    continue;
+                }
+                writer.WriteLine(file);
+            }
+        }
+    }
 
     private static void _LoadMods() {
         Debug.Log("Loading game mods...");
@@ -210,8 +209,8 @@ public static partial class ETGMod {
         }
 
         if (!File.Exists(ModsListFile)) {
-			Debug.Log("Mod list file not existing or invalid, creating...");
-			_CreateModsListFile();
+            Debug.Log("Mod list file not existing or invalid, creating...");
+            _CreateModsListFile();
         }
 
         // Pre-run all lines to check if something's invalid
@@ -229,7 +228,7 @@ public static partial class ETGMod {
             if (!File.Exists(path) && !File.Exists(absolutePath) &&
                 !Directory.Exists(path) && !Directory.Exists(absolutePath)) {
                 File.Delete(ModsListFile);
-				_CreateModsListFile();
+                _CreateModsListFile();
             }
         }
 
@@ -248,7 +247,6 @@ public static partial class ETGMod {
                 LogDetailed(e);
             }
         }
-
     }
 
     public static void LogDetailed(Exception e, string tag = null) {
@@ -289,7 +287,7 @@ public static partial class ETGMod {
         }
 
         // Fallback metadata in case none is found
-        ETGModuleMetadata metadata = new ETGModuleMetadata() {
+        var metadata = new ETGModuleMetadata() {
             Name = Path.GetFileNameWithoutExtension(archive),
             Version = new Version(0, 0),
             DLL = "mod.dll"
@@ -297,7 +295,7 @@ public static partial class ETGMod {
         Assembly asm = null;
 
         var assemblyMapping = new Dictionary<string, string>();
-        using (ZipFile zip = ZipFile.Read(archive)) {
+        using (var zip = ZipFile.Read(archive)) {
             // First read the metadata, ...
             Texture2D icon = null;
             foreach (ZipEntry entry in zip.Entries) {
@@ -311,7 +309,7 @@ public static partial class ETGMod {
                 if (entry.FileName == "icon.png") {
                     icon = new Texture2D(2, 2);
                     icon.name = "icon";
-                    using (var ms = new MemoryStream((int)entry.UncompressedSize)) {
+                    using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         icon.LoadImage(ms.GetBuffer());
@@ -320,19 +318,19 @@ public static partial class ETGMod {
                     continue;
                 }
 
-                if (entry.FileName.EndsWith(".dll"))
-                {
+                if (entry.FileName.EndsWith(".dll")) {
                     string asmName = Path.GetFileName(entry.FileName);
                     assemblyMapping[asmName] = entry.FileName;
                 }
             }
+
             if (icon != null) {
                 metadata.Icon = icon;
             }
 
             // ... then check if the mod runs on this profile ...
             if (!metadata.Profile.RunsOn(BaseProfile)) {
-               // Debug.LogWarning("http://www.windoof.org/sites/default/files/unsupported.gif");
+                // Debug.LogWarning("http://www.windoof.org/sites/default/files/unsupported.gif");
                 return;
             }
 
@@ -352,7 +350,7 @@ public static partial class ETGMod {
             foreach (ZipEntry entry in zip.Entries) {
                 string entryName = entry.FileName.Replace("\\", "/");
                 if (entryName == metadata.DLL) {
-                    using (var ms = new MemoryStream((int)entry.UncompressedSize)) {
+                    using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         if (metadata.Prelinked) {
@@ -363,10 +361,8 @@ public static partial class ETGMod {
                     }
                 } else {
                     byte[] data = null;
-                    if (entryName.StartsWith("sprites/") && !entry.IsDirectory)
-                    {
-                        using (var ms = new MemoryStream((int)entry.UncompressedSize))
-                        {
+                    if (entryName.StartsWith("sprites/") && !entry.IsDirectory) {
+                        using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
                             entry.Extract(ms);
                             data = ms.ToArray();
                         }
@@ -475,23 +471,17 @@ public static partial class ETGMod {
         Debug.Log("Mod " + metadata.Name + " initialized.");
     }
 
-    private static ResolveEventHandler GenerateModArchiveAssemblyResolver(this ETGModuleMetadata metadata, Dictionary<string, string> assemblyArchiveFileMapping)
-    {
-        return delegate (object sender, ResolveEventArgs args)
-        {
+    private static ResolveEventHandler GenerateModArchiveAssemblyResolver(this ETGModuleMetadata metadata, Dictionary<string, string> assemblyArchiveFileMapping) {
+        return delegate (object sender, ResolveEventArgs args) {
             string asmName = new AssemblyName(args.Name).Name + ".dll";
-            if (!assemblyArchiveFileMapping.TryGetValue(asmName, out string entryName))
-            {
+            if (!assemblyArchiveFileMapping.TryGetValue(asmName, out string entryName)) {
                 return null;
             }
 
-            using (ZipFile zip = ZipFile.Read(metadata.Archive))
-            {
+            using (ZipFile zip = ZipFile.Read(metadata.Archive)) {
                 var entry = zip[entryName];
-                if (entry != null)
-                {
-                    using (var ms = new MemoryStream((int)entry.UncompressedSize))
-                    {
+                if (entry != null) {
+                    using (var ms = new MemoryStream((int) entry.UncompressedSize)) {
                         entry.Extract(ms);
                         ms.Seek(0, SeekOrigin.Begin);
                         return Assembly.Load(ms.GetBuffer());
@@ -503,13 +493,10 @@ public static partial class ETGMod {
         };
     }
 
-    private static ResolveEventHandler GenerateModDirectoryAssemblyResolver(this ETGModuleMetadata metadata)
-    {
-        return delegate (object sender, ResolveEventArgs args)
-        {
+    private static ResolveEventHandler GenerateModDirectoryAssemblyResolver(this ETGModuleMetadata metadata) {
+        return delegate (object sender, ResolveEventArgs args) {
             string asmPath = Path.Combine(metadata.Directory, new AssemblyName(args.Name).Name + ".dll");
-            if (!File.Exists(asmPath))
-            {
+            if (!File.Exists(asmPath)) {
                 return null;
             }
             return Assembly.LoadFrom(asmPath);
@@ -599,7 +586,7 @@ public static partial class ETGMod {
 
         return (T) args_[0];
     }
-        
+
     /// <summary>
     /// Calls a method in every module.
     /// </summary>
@@ -654,10 +641,8 @@ public static partial class ETGMod {
         return args[0];
     }
 
-    private static void CallInEachModule(Action<ETGModule> modAction)
-    {
-        for (int i = 0; i < AllMods.Count; i++)
-        {
+    private static void CallInEachModule(Action<ETGModule> modAction) {
+        for (int i = 0; i < AllMods.Count; i++) {
             var mod = AllMods[i];
             modAction(mod);
         }

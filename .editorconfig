@@ -66,7 +66,7 @@ csharp_preserve_single_line_statements = true
 #Style - Code block preferences
 
 #prefer curly braces even for one line of code
-csharp_prefer_braces = true:suggestion
+csharp_prefer_braces = false:suggestion
 
 #Style - expression bodied member options
 
@@ -77,9 +77,9 @@ csharp_style_expression_bodied_constructors = false:suggestion
 #prefer block bodies for indexers
 csharp_style_expression_bodied_indexers = false:suggestion
 #prefer block bodies for methods
-csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_methods = true:suggestion
 #prefer block bodies for properties
-csharp_style_expression_bodied_properties = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
 
 #Style - expression level options
 
@@ -100,9 +100,9 @@ dotnet_style_object_initializer = true:suggestion
 #prefer explicit type over var in all cases, unless overridden by another code style rule
 csharp_style_var_elsewhere = false:suggestion
 #prefer explicit type over var to declare variables with built-in system types such as int
-csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_for_built_in_types = true:suggestion
 #prefer explicit type over var when the type is already mentioned on the right-hand side of a declaration
-csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
 
 #Style - language keyword and framework type options
 

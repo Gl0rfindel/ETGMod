@@ -43,5 +43,4 @@ public class ETGModMainBehaviour : MonoBehaviour {
     public void Update() {
         ETGMod.Assets.Packer.Apply();
     }
-
 }

@@ -63,13 +63,13 @@ public class IDPool<T> {
 
     public void Remove(string id, bool destroy = true) {
         var key = ResolveKey(id);
-        if (_LockedNamespaces.Contains(key.Namespace)) 
+        if (_LockedNamespaces.Contains(key.Namespace))
             throw new LockedNamespaceException(key.Namespace);
 
-        if (!_Storage.TryGetValue(key, out var value)) 
+        if (!_Storage.TryGetValue(key, out var value))
             throw new NonExistantIDException(id);
 
-        if (destroy && value is UnityEngine.Object o) 
+        if (destroy && value is UnityEngine.Object o)
             UnityEngine.Object.Destroy(o);
 
         _Storage.Remove(key);
@@ -78,11 +78,11 @@ public class IDPool<T> {
     public void Rename(string source, string target) {
         Console.WriteLine($"RENAMING {source} -> {target}");
         var targetKey = ResolveKey(target);
-        if (_LockedNamespaces.Contains(targetKey.Namespace)) 
+        if (_LockedNamespaces.Contains(targetKey.Namespace))
             throw new LockedNamespaceException(targetKey.Namespace);
 
         var sourceKey = ResolveKey(source);
-        if (!_Storage.TryGetValue(sourceKey, out var obj)) 
+        if (!_Storage.TryGetValue(sourceKey, out var obj))
             throw new NonExistantIDException(source);
 
         _Storage.Remove(sourceKey);
@@ -90,7 +90,7 @@ public class IDPool<T> {
     }
 
     public static void VerifyID(string id) {
-        if (id.Count(':') > 1) 
+        if (id.Count(':') > 1)
             throw new BadlyFormattedIDException(id);
     }
 
@@ -104,8 +104,7 @@ public class IDPool<T> {
         }
     }
 
-    private static NamespaceItemKey ResolveKey(string id)
-    {
+    private static NamespaceItemKey ResolveKey(string id) {
         id = id.Trim();
 
         if (id.ContainsWhitespace())
@@ -127,7 +126,7 @@ public class IDPool<T> {
     public static Entry Split(string id) {
         VerifyID(id);
         string[] split = id.Split(':');
-        if (split.Length != 2) 
+        if (split.Length != 2)
             throw new BadlyFormattedIDException(id);
         return new Entry(split[0], split[1]);
     }
@@ -147,30 +146,25 @@ public class IDPool<T> {
     public IEnumerable<string> IDs => _Storage.Keys.Select(k => k.FullId);
 
     public IEnumerable<KeyValuePair<string, T>> Pairs {
-        get 
-        {
+        get {
             foreach (var kv in _Storage) {
                 yield return new KeyValuePair<string, T>(kv.Key.FullId, kv.Value);
             }
         }
     }
 
-    public struct Entry
-    {
+    public struct Entry {
         public string Namespace;
         public string Name;
 
-        public Entry(string namesp, string name)
-        {
+        public Entry(string namesp, string name) {
             Namespace = namesp;
             Name = name;
         }
     }
 
-    private readonly struct NamespaceItemKey : IEquatable<NamespaceItemKey>
-    {
-        public NamespaceItemKey(string ns, string itemPart, string fullId)
-        {
+    private readonly struct NamespaceItemKey : IEquatable<NamespaceItemKey> {
+        public NamespaceItemKey(string ns, string itemPart, string fullId) {
             Namespace = ns;
             ItemPart = itemPart;
             FullId = fullId;
@@ -182,8 +176,7 @@ public class IDPool<T> {
 
         public string FullId { get; }
 
-        public override int GetHashCode()
-        {
+        public override int GetHashCode() {
             int hc = Namespace?.GetHashCode() ?? 0;
             hc *= 17;
             hc <<= 16;
@@ -191,10 +184,8 @@ public class IDPool<T> {
             return hc;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj is NamespaceItemKey other)
-            {
+        public override bool Equals(object obj) {
+            if (obj is NamespaceItemKey other) {
                 return Equals(this, other);
             }
 
@@ -203,8 +194,7 @@ public class IDPool<T> {
 
         public bool Equals(NamespaceItemKey other) => Equals(this, other);
 
-        private static bool Equals(in NamespaceItemKey left, in NamespaceItemKey right)
-        {
+        private static bool Equals(in NamespaceItemKey left, in NamespaceItemKey right) {
             return left.Namespace == right.Namespace && left.ItemPart == right.ItemPart;
         }
 
