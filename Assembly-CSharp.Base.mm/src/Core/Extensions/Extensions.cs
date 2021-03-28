@@ -30,6 +30,21 @@ public static partial class ETGMod {
         return count;
     }
 
+    internal static bool ContainsWhitespace(this string s)
+    {
+        if (string.IsNullOrEmpty(s))
+            return false;
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (char.IsWhiteSpace(c))
+                return true;
+        }
+
+        return false;
+    }
+
     public static T GetFirst<T>(this IEnumerable<T> e) {
         foreach (T t in e) {
             return t;

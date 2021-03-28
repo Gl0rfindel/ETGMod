@@ -14,9 +14,10 @@ namespace Gungeon {
                     string line;
                     while (true) {
                         line = reader.ReadLine();
-                        if (line == null) break;
-                        Console.WriteLine($"STARTS WITH HASH? {line.StartsWithInvariant("#")}");
-                        if (line.StartsWithInvariant("#")) continue;
+                        if (line == null) 
+                            break;
+                        if (line.StartsWithInvariant("#")) 
+                            continue;
                         string[] split = line.Split(' ');
                         add_method.Invoke(split[0], split[1]);
                     }
