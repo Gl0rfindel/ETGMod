@@ -368,8 +368,8 @@ public static partial class ETGMod {
 
             // TODO items in dfAtlas!
 
-            if (atlas.Replacement != null) HandleDfAtlas(atlas.Replacement);
-
+            if (atlas.Replacement != null) 
+                HandleDfAtlas(atlas.Replacement);
         }
 
         public static void ReplaceTexture(tk2dSpriteDefinition frame, Texture2D replacement, bool pack = true) {
@@ -523,6 +523,7 @@ public static partial class ETGMod {
     public static void Handle(this tk2dBaseSprite sprite) {
         Assets.HandleSprites(sprite.Collection);
     }
+
     public static void HandleAuto(this tk2dBaseSprite sprite) {
         _HandleAuto(sprite.Handle);
     }

@@ -80,8 +80,8 @@ public class AssetMetadata {
                     return ((LimitedStream) stream).GetBuffer();
                 }
 
-                using (MemoryStream ms = new MemoryStream()) {
-                    byte[] buffer = new byte[2048];
+                using (var ms = new MemoryStream()) {
+                    byte[] buffer = new byte[64 * 1024];
                     int read;
                     while (0 < (read = stream.Read(buffer, 0, buffer.Length))) {
                         ms.Write(buffer, 0, read);
@@ -92,11 +92,7 @@ public class AssetMetadata {
         }
     }
 
-    public bool HasData {
-        get {
-            return AssetType != ETGMod.Assets.t_AssetDirectory;
-        }
-    }
+    public bool HasData => AssetType != ETGMod.Assets.t_AssetDirectory;
 
     public AssetMetadata() {
         Container = ContainerType.Filesystem;
