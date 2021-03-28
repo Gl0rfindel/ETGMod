@@ -82,6 +82,7 @@
     <Compile Include="src\AssetMetadata.cs" />
     <Compile Include="src\Core\Array{T}.cs" />
     <Compile Include="src\Core\Assets\AssetSpriteCollectionLookup.cs" />
+    <Compile Include="src\Core\Extensions\ZipExtensions.cs" />
     <Compile Include="src\Core\GunAnimationSpriteCache.cs" />
     <Compile Include="src\ETGGUI\ETGDamageIndicatorGUI.cs" />
     <Compile Include="src\ETGGUI\FontConverter.cs" />
@@ -105,7 +106,6 @@
     <Compile Include="src\ETGGUI\ETGModGUI.cs" />
     <Compile Include="src\ETGModMainBehaviour.cs" />
     <Compile Include="src\LimitedStream.cs" />
-    <Compile Include="src\MonoModRules.cs" />
     <Compile Include="src\MonoMod\MonoModAdded.cs" />
     <Compile Include="src\MonoMod\MonoModBlacklisted.cs" />
     <Compile Include="src\MonoMod\MonoModConstructor.cs" />
