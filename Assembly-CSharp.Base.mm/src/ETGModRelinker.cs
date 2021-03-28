@@ -1,11 +1,8 @@
 ﻿using System;
-using Debug = UnityEngine.Debug;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Ionic.Zip;
-using Mono.Cecil;
 using System.Security.Cryptography;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 public delegate TypeReference DGetRelinkedTypeReference(TypeReference type, MemberReference context);
@@ -118,7 +115,7 @@ public static class ETGModRelinker {
             }
             type.Interfaces[i] = interf;
         }
-        
+
         foreach (FieldDefinition field in type.Fields) {
             field.FieldType = field.FieldType.RelinkedReference(type);
         }
