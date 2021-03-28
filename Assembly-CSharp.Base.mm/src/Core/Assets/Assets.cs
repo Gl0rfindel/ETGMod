@@ -29,11 +29,11 @@ public static partial class ETGMod {
         /// <summary>
         /// Asset map. All string - AssetMetadata entries here will cause an asset to be remapped. Use ETGMod.Assets.AddMapping to add an entry.
         /// </summary>
-        public readonly static Dictionary<string, AssetMetadata> Map = new Dictionary<string, AssetMetadata>();
+        public readonly static Dictionary<string, AssetMetadata> Map = new Dictionary<string, AssetMetadata>(StringComparer.InvariantCultureIgnoreCase);
         /// <summary>
         /// Directories that would not fit into Map due to conflicts.
         /// </summary>
-        public readonly static Dictionary<string, AssetMetadata> MapDirs = new Dictionary<string, AssetMetadata>();
+        public readonly static Dictionary<string, AssetMetadata> MapDirs = new Dictionary<string, AssetMetadata>(StringComparer.InvariantCultureIgnoreCase);
         /// <summary>
         /// Texture remappings. This dictionary starts empty and will be filled as sprites get replaced. Feel free to add your own remapping here.
         /// </summary>
@@ -71,11 +71,12 @@ public static partial class ETGMod {
 
         public static bool TryGetMapped(string path, out AssetMetadata metadata, bool includeDirs = false) {
             if (includeDirs) {
-                if (MapDirs.TryGetValue(path, out metadata)) { return true; }
-                if (MapDirs.TryGetValue(path.ToLowerInvariant(), out metadata)) { return true; }
+                if (MapDirs.TryGetValue(path, out metadata)) 
+                    return true;
             }
-            if (Map.TryGetValue(path, out metadata)) { return true; }
-            if (Map.TryGetValue(path.ToLowerInvariant(), out metadata)) { return true; }
+
+            if (Map.TryGetValue(path, out metadata))
+                return true;
 
             return false;
         }
