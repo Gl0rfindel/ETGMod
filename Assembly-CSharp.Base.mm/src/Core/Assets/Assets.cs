@@ -5,10 +5,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Newtonsoft.Json;
-using AttachPoint = tk2dSpriteDefinition.AttachPoint;
-using YamlDotNet;
 using YamlDotNet.Serialization;
+using AttachPoint = tk2dSpriteDefinition.AttachPoint;
 
 public static partial class ETGMod {
     /// <summary>
@@ -160,6 +158,7 @@ public static partial class ETGMod {
                 Debug.Log("Resources directory not existing, creating...");
                 Directory.CreateDirectory(ResourcesDirectory);
             }
+
             string spritesDir = Path.Combine(ResourcesDirectory, "sprites");
             if (!Directory.Exists(spritesDir)) {
                 Debug.Log("Sprites directory not existing, creating...");
@@ -190,7 +189,14 @@ public static partial class ETGMod {
             AssetMetadata metadata;
             bool isJson = false;
             bool isPatch = false;
-            if (TryGetMapped(path, out metadata, true)) { } else if (TryGetMapped(path + ".json", out metadata)) { isJson = true; } else if (TryGetMapped(path + ".patch.json", out metadata)) { isPatch = true; isJson = true; }
+            if (!TryGetMapped(path, out metadata, true)) {
+                if (TryGetMapped(path + ".json", out metadata)) {
+                    isJson = true;
+                } else if (TryGetMapped(path + ".patch.json", out metadata)) {
+                    isPatch = true;
+                    isJson = true;
+                }
+            }
 
             if (metadata != null) {
                 if (isJson) {
@@ -252,7 +258,7 @@ public static partial class ETGMod {
                 if (t_Texture.IsAssignableFrom(type) ||
                     type == t_Texture2D ||
                     (type == t_Object && metadata.AssetType == t_Texture2D)) {
-                    Texture2D tex = new Texture2D(2, 2);
+                    var tex = new Texture2D(2, 2);
                     tex.name = path;
                     tex.LoadImage(metadata.Data);
                     tex.filterMode = FilterMode.Point;
@@ -262,8 +268,8 @@ public static partial class ETGMod {
             }
 
             UnityEngine.Object orig = Resources.Load(path + ETGModUnityEngineHooks.SkipSuffix, type);
-            if (orig is GameObject) {
-                Objects.HandleGameObject((GameObject) orig);
+            if (orig is GameObject o) {
+                Objects.HandleGameObject(o);
             }
             return orig;
         }

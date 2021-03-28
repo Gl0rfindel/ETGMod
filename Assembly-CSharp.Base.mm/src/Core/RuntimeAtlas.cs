@@ -33,8 +33,9 @@ public class RuntimeAtlasPacker {
     }
 
     public Action<RuntimeAtlasPage> OnNewPage;
+
     public RuntimeAtlasPage NewPage() {
-        RuntimeAtlasPage page = new RuntimeAtlasPage(Width, Height, Format, Padding);
+        var page = new RuntimeAtlasPage(Width, Height, Format, Padding);
         Pages.Add(page);
         OnNewPage?.Invoke(page);
         return page;

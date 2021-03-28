@@ -34,8 +34,7 @@ public static class GunExt {
         gun.alternateReloadAnimation = gun.UpdateAnimation("alternate_reload", collection, true);
     }
 
-    public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false)
-    {
+    public static string UpdateAnimation(this Gun gun, string name, tk2dSpriteCollectionData collection = null, bool returnToIdle = false) {
         collection = collection ?? ETGMod.Databases.Items.WeaponCollection;
         SpriteCache.UpdateCollection(collection);
         var frames = SpriteCache.TryGetAnimationFrames(collection.name, gun.name, name);
@@ -45,13 +44,11 @@ public static class GunExt {
 
         string clipName = gun.name + "_" + name;
         tk2dSpriteAnimationClip clip = gun.spriteAnimator.Library.GetClipByName(clipName);
-        if (clip == null)
-        {
+        if (clip == null) {
             clip = new tk2dSpriteAnimationClip();
             clip.name = clipName;
             clip.fps = 15;
-            if (returnToIdle)
-            {
+            if (returnToIdle) {
                 clip.wrapMode = tk2dSpriteAnimationClip.WrapMode.Once;
             }
             Array.Resize(ref gun.spriteAnimator.Library.clips, gun.spriteAnimator.Library.clips.Length + 1);
@@ -109,7 +106,7 @@ public static class GunExt {
         if (!projectile.gameObject.activeSelf) {
             string name = projectile.name;
             // TODO The clone of the clone fixes the projectile "breaking", but may cause performance issues.
-            projectile = (Projectile)UnityEngine.Object.Instantiate(projectile, projectile.transform.parent);
+            projectile = (Projectile) UnityEngine.Object.Instantiate(projectile, projectile.transform.parent);
             projectile.name = name;
             projectile.gameObject.SetActive(true);
         }
@@ -118,7 +115,7 @@ public static class GunExt {
     }
 
     public static Projectile AddProjectileFrom(this Gun gun, string other, bool cloned = true) {
-        return gun.AddProjectileFrom((Gun)ETGMod.Databases.Items[other], cloned);
+        return gun.AddProjectileFrom((Gun) ETGMod.Databases.Items[other], cloned);
     }
     public static Projectile AddProjectileFrom(this Gun gun, Gun other, bool cloned = true) {
         if (other.DefaultModule.projectiles.Count == 0) return null;
@@ -132,7 +129,7 @@ public static class GunExt {
     }
 
     public static ProjectileModule AddProjectileModuleFrom(this Gun gun, string other, bool cloned = true, bool clonedProjectiles = true) {
-        return gun.AddProjectileModuleFrom((Gun)ETGMod.Databases.Items[other], cloned, clonedProjectiles);
+        return gun.AddProjectileModuleFrom((Gun) ETGMod.Databases.Items[other], cloned, clonedProjectiles);
     }
     public static ProjectileModule AddProjectileModuleFrom(this Gun gun, Gun other, bool cloned = true, bool clonedProjectiles = true) {
         ProjectileModule module = other.DefaultModule;
