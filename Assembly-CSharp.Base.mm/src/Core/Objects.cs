@@ -40,7 +40,7 @@ public static partial class ETGMod {
         }
 
         private static void _HookDFSprite(Component c) {
-            try { ((dfSprite)c).Atlas.HandleAuto(); } catch { }
+            try { ((dfSprite) c).Atlas.HandleAuto(); } catch { }
         }
 
         public static void HookUnity() {
@@ -85,7 +85,7 @@ public static partial class ETGMod {
         }
 
         public static void HandleGameObject(GameObject go, bool recursive = true) {
-            if (!go) 
+            if (!go)
                 return;
 
             if (!ShouldRunHooks())
@@ -111,7 +111,7 @@ public static partial class ETGMod {
         }
 
         public static void HandleObject(UnityEngine.Object o) {
-            if (!o) 
+            if (!o)
                 return;
 
             if (!ShouldRunHooks())
@@ -185,8 +185,7 @@ public static partial class ETGMod {
         a();
     }
 
-    private static bool ShouldRunHooks()
-    {
+    private static bool ShouldRunHooks() {
         if (Objects.EnableHooks)
             return true;
 
