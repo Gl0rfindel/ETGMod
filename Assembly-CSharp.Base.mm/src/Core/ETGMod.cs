@@ -80,11 +80,8 @@ public static partial class ETGMod {
     public static Action<Coroutine> StopGlobalCoroutine;
 
     private static bool _Init = false;
-    public static bool Initialized {
-        get {
-            return _Init;
-        }
-    }
+    public static bool Initialized => _Init;
+
     public static void Init() {
         if (_Init) {
             return;
@@ -434,6 +431,7 @@ public static partial class ETGMod {
         if (!File.Exists(metadata.DLL)) {
             return;
         }
+
         if (metadata.Prelinked) {
             asm = Assembly.LoadFrom(metadata.DLL);
         } else {

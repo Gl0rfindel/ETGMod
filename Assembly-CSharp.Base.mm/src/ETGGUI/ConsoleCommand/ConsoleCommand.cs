@@ -2,8 +2,6 @@
 
 public class ConsoleCommand : ConsoleCommandUnit {
 
-    private string[] _EmptyStringArray = {};
-
     public ConsoleCommand(Action<string[]> cmdref, AutocompletionSettings autocompletion) {
         CommandReference = cmdref;
         Autocompletion = autocompletion;
@@ -11,8 +9,7 @@ public class ConsoleCommand : ConsoleCommandUnit {
 
     public ConsoleCommand(Action<string[]> cmdref) {
         CommandReference = cmdref;
-        Autocompletion = new AutocompletionSettings ((string input) => _EmptyStringArray);
+        Autocompletion = new AutocompletionSettings(input => Array<string>.Empty);
     }
-
 }
 

@@ -3,12 +3,7 @@
 public class AutocompletionSettings {
     public Func<int, string, string[]> Match;
     public AutocompletionSettings (Func<string, string[]> match) {
-        Match = (Func<int, string, string[]>) delegate(int index, string key) {
-            if (index == 0) {
-                return match(key);
-            }
-            return null;
-        };
+        Match = (index, key) => index == 0 ? match(key) : null;
     }
 
     public AutocompletionSettings(Func<int, string, string[]> match) {
