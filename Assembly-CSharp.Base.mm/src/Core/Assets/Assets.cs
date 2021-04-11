@@ -39,6 +39,8 @@ public static partial class ETGMod {
 
         private readonly static Dictionary<string, AssetSpriteCollectionLookup> _assetSpriteCollections = new Dictionary<string, AssetSpriteCollectionLookup>();
 
+        private readonly static HashSet<tk2dSpriteCollectionData> _spriteCollections = new HashSet<tk2dSpriteCollectionData>();
+
         public static bool DumpResources = false;
 
         public static bool DumpSprites = false;
@@ -279,8 +281,9 @@ public static partial class ETGMod {
                 return;
             }
 
+            _spriteCollections.Add(sprites);
             string path = "sprites/" + sprites.spriteCollectionName;
-            ProcessSpritePath(sprites, path);
+            ProcessFullCollectionReplacement(sprites, path);
 
             if (DumpSprites) {
                 Dump.DumpSpriteCollection(sprites);
@@ -300,7 +303,7 @@ public static partial class ETGMod {
                 string assetPath = mapping.Key;
                 try {
                     string name = assetPath.Substring(path.Length + 1);
-                    ProcessFrame(sprites, name, assetPath, ref list);
+                    ProcessSprite(sprites, name, assetPath, ref list);
                 } catch (Exception e) {
                     Debug.Log($"Exception while processing {assetPath} for sprite collection {sprites.spriteCollectionName}");
                     Debug.LogException(e);
@@ -387,7 +390,7 @@ public static partial class ETGMod {
             }
         }
 
-        private static void ProcessSpritePath(tk2dSpriteCollectionData sprites, string path) {
+        private static void ProcessFullCollectionReplacement(tk2dSpriteCollectionData sprites, string collectionPath) {
             if (sprites.materials == null || sprites.materials.Length == 0)
                 return;
 
@@ -406,9 +409,9 @@ public static partial class ETGMod {
             if (atlasName[0] == '~')
                 return;
 
-            if (!TextureMap.TryGetValue(path, out var replacement)) {
-                if (TryGetMapped(path, out _)) {
-                    TextureMap[path] = replacement = Resources.Load<Texture2D>(path);
+            if (!TextureMap.TryGetValue(collectionPath, out var replacement)) {
+                if (TryGetMapped(collectionPath, out _)) {
+                    TextureMap[collectionPath] = replacement = Resources.Load<Texture2D>(collectionPath);
                 } else {
                     if (EnabledLegacyFileSystemTextureMapping) {
                         foreach (KeyValuePair<string, AssetMetadata> mapping in Map) {
@@ -421,12 +424,12 @@ public static partial class ETGMod {
 
                             string spriteName = resourcePath.Substring(9);
                             if (sprites.spriteCollectionName.Contains(spriteName)) {
-                                string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + path).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
+                                string copyPath = Path.Combine(ResourcesDirectory, ("DUMP" + collectionPath).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar) + ".png");
                                 if (mapping.Value.Container == AssetMetadata.ContainerType.Filesystem && !File.Exists(copyPath)) {
                                     Directory.GetParent(copyPath).Create();
                                     File.Copy(mapping.Value.File, copyPath);
                                 }
-                                TextureMap[path] = replacement = Resources.Load<Texture2D>(resourcePath);
+                                TextureMap[collectionPath] = replacement = Resources.Load<Texture2D>(resourcePath);
                                 break;
                             }
                         }
@@ -446,7 +449,7 @@ public static partial class ETGMod {
             }
         }
 
-        private static void ProcessFrame(tk2dSpriteCollectionData sprites, string name, string assetPath, ref List<tk2dSpriteDefinition> newSprites) {
+        private static void ProcessSprite(tk2dSpriteCollectionData sprites, string name, string assetPath, ref List<tk2dSpriteDefinition> newSprites) {
             tk2dSpriteDefinition frame = sprites.GetSpriteDefinition(name);
 
             if (frame != null && frame.materialInst != null) {
@@ -516,6 +519,37 @@ public static partial class ETGMod {
                 sprites.SetAttachPoints(newSprites.Count, frameData.attachPoints);
 
                 newSprites.Add(frame);
+            }
+        }
+
+        internal static void ProcessAllSpriteReplacements() {
+            foreach (var collection in _spriteCollections) {
+                ProcessCollectionSpriteReplacements(collection);
+            }
+        }
+
+        internal static void ProcessCollectionSpriteReplacements(tk2dSpriteCollectionData sprites) {
+            if (!sprites)
+                return;
+
+            // this handles cases where the mod has taken an existing sprite
+            // copied it and renamed it. this happens with custom gun projectiles
+            // in particular.
+            foreach (var sprite in sprites.spriteDefinitions) {
+                if (sprite == null)
+                    continue;
+
+                if (sprite.materialInst != null) {
+                    if (Packer.IsPageTexture(sprite.materialInst.mainTexture))
+                        continue;
+                }
+
+                string assetPath = $"sprites/{sprites.spriteCollectionName}/{sprite.name}";
+                if (!TextureMap.TryGetValue(assetPath, out var replacement)) {
+                    continue;
+                }
+
+                sprite.ReplaceTexture(replacement);
             }
         }
     }

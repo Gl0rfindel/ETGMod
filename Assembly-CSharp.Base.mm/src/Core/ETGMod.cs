@@ -159,6 +159,8 @@ public static partial class ETGMod {
 
         CallInEachModule(mod => mod.Start());
 
+        Assets.ProcessAllSpriteReplacements();
+
         // Needs to happen late as mods can add their own guns.
         StartGlobalCoroutine(ETGModGUI.ListAllItemsAndGuns());
     }
